@@ -1,3 +1,4 @@
+import { mappedBuffer } from "./tools.js";
 
 function createVertex(theta, phi, r) {
     return [
@@ -33,12 +34,8 @@ export function sphericalVertices(segmentCount, size) {
 
 export function sphericalVertexBuffer(device, segments, size) {
     const vertices = sphericalVertices(segments, size);
-    const vertexBuffer = device.createBuffer({
-        size: vertices.byteLength,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        mappedAtCreation: true
+    const vertexBuffer = mappedBuffer(device, vertices, {
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,        
     });
-    new Float32Array(vertexBuffer.getMappedRange()).set(vertices);
-    vertexBuffer.unmap();
     return [vertexBuffer, vertices.length];
 }
