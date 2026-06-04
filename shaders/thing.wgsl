@@ -7,7 +7,7 @@ struct Thing {
     transformationMatrix: mat4x4<f32>
 };
 
-@group(0) @binding(1) var<storage> things: array<Thing>;
+@group(0) @binding(0) var<storage> things: array<Thing>;
 
 @vertex
 fn vsMain(@builtin(instance_index) instanceIndex: u32, @location(0) position: vec3<f32>) -> VertexOutput {
