@@ -6,19 +6,35 @@ function randomOrientation(tm) {
     return mat4.rotateZ(tm, 4 * Math.PI * (Math.random() - 0.5));
 }
 
-function randomTranslation(tm) {
-    return mat4.translation(Array.from({length: 3}, () => (Math.random() - 0.5) * 2));
+function randomTranslation() {    
+    return mat4.translation([
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 2,
+        0.25,        
+    ]);
 }
 
 export class Thing {
-    static random() {
 
-        // random position
-        const location = randomTranslation(mat4.identity())
+    static at(x, y, z) {
+        // specified position
+        const location = mat4.translation([x, y, z]);
         const orientation = randomOrientation(mat4.identity());
 
         // random movement
-        const translation = randomTranslation(mat4.scaling([0.1, 0.1, 0.1]));
+        const translation = randomTranslation();
+        const rotation = randomOrientation(mat4.identity());
+        return new Thing(location, orientation, translation, rotation);
+
+    }
+    static random() {
+
+        // random position
+        const location = randomTranslation()
+        const orientation = randomOrientation(mat4.identity());
+
+        // random movement
+        const translation = randomTranslation();
         const rotation = randomOrientation(mat4.identity());
         return new Thing(location, orientation, translation, rotation);
     }

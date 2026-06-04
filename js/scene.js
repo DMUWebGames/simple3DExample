@@ -12,11 +12,17 @@ async function createShader(path, options) {
 const module = await createShader('shaders/thing.wgsl');
 
 export class Scene {
-    constructor(nThings) {
+
+    static withNThings(nThings) { 
+        const things = Array.from({ length: nThings }, () => Thing.random());
+        return new Scene(things);
+    }
+
+    constructor(things) {
         const [b, v] = sphericalVertexBuffer(device, 12, 0.2);
         this.vertexBuffer = b;
         this.nVertices = v;
-        this.things = Array.from({length: nThings}, () => Thing.random());
+        this.things = things;
         const thingData = new Float32Array(this.things.map(thing => thing.data).flat());
         this.thingBuffer = device.createBuffer({
             size: thingData.byteLength,
