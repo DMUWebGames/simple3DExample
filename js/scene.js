@@ -1,6 +1,6 @@
 // The scene manages everything
 import { sphericalVertexBuffer, sphericalVertices } from "./sphere.js";
-import { device, format, ctx } from "./setup.js";
+import { device, format, ctx, canvas } from "./setup.js";
 import { Thing } from "./thing.js";
 
 async function createShader(path, options) {
@@ -18,8 +18,14 @@ export class Scene {
         return new Scene(things);
     }
 
+    get canvasSize() {
+        return new Float32Array([canvas.width, canvas.height]);
+    }
+
     constructor(things) {
-        const [b, v] = sphericalVertexBuffer(device, 12, 0.2);
+
+        // vertices (just things for now)
+        const [b, v] = sphericalVertexBuffer(device, 25, 0.2);
         this.vertexBuffer = b;
         this.nVertices = v;
         this.things = things;
@@ -31,6 +37,13 @@ export class Scene {
         });
         new Float32Array(this.thingBuffer.getMappedRange()).set(thingData);
         this.thingBuffer.unmap();
+
+        // uniform buffer (canvas)
+        this.canvasBuffer = device.createBuffer({
+            label: 'canvas size',
+            size: 2 * 4, // width and height is two floats
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
 
         // pipeline
         this.renderPipeline = device.createRenderPipeline({
@@ -64,22 +77,40 @@ export class Scene {
         this.renderBindGroup = device.createBindGroup({
             layout: this.renderPipeline.getBindGroupLayout(0),
             entries: [
-                { binding: 0, resource: { buffer: this.thingBuffer } }
+                { binding: 0, resource: { buffer: this.thingBuffer } },
+                { binding: 1, resource: { buffer: this.canvasBuffer } }
             ]
         });
+
+        window.addEventListener("resize", this.resize.bind(this));
+        window.dispatchEvent(new Event("resize"));
+
     }
 
+    resize() {
+        console.log("resizing canvas");
+        
+        canvas.width = document.body.clientWidth;
+        canvas.height = document.body.clientHeight;
+        this.resizeRequired = true;
+    }
 
-    render(view) {
+    render() {
         const encoder = device.createCommandEncoder();
         const renderPass = encoder.beginRenderPass({
             colorAttachments: [{
                 view: ctx.getCurrentTexture().createView(),
-                clearValue: [0, 1, 0, 1],
+                // clearValue: [0, 1, 0, 1],
                 loadOp: "clear",
                 storeOp: "store"
             }]
         });
+        if(this.resizeRequired) {
+            console.log("updating uniform");
+            device.queue.writeBuffer(this.canvasBuffer, 0, this.canvasSize);
+            this.resizeRequired = false;
+        }
+
         renderPass.setPipeline(this.renderPipeline);
         renderPass.setBindGroup(0, this.renderBindGroup);
         renderPass.setVertexBuffer(0, this.vertexBuffer);
@@ -87,5 +118,10 @@ export class Scene {
 
         renderPass.end();        
         device.queue.submit([encoder.finish()]);
+    }
+
+    animate() {
+        this.render();
+        requestAnimationFrame(this.animate.bind(this))
     }
 }

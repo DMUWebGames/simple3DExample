@@ -18,14 +18,7 @@ document.body.style.margin = "0";
 document.body.style.minHeight = "100dvh";
 canvas.style.backgroundColor = "hsl(0 0% 10%)";
 
-window.addEventListener("resize", ev => {
-    canvas.width = document.body.clientWidth;
-    canvas.height = document.body.clientHeight;
-})
-
-window.dispatchEvent(new Event("resize"));
-
 export const format = navigator.gpu.getPreferredCanvasFormat();
 export const ctx = canvas.getContext('webgpu');
-const alphamode = "opaque";
+const alphamode = "premultiplied";
 ctx.configure({device, format, alphamode});
