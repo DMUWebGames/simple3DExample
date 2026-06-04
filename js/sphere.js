@@ -31,8 +31,8 @@ export function sphericalVertices(segmentCount, size) {
     return new Float32Array(coords.flat(2));
 }
 
-export function sphericalVertexBuffer(device, segments) {
-    const vertices = sphericalVertices(segments, 1);
+export function sphericalVertexBuffer(device, segments, size) {
+    const vertices = sphericalVertices(segments, size);
     const vertexBuffer = device.createBuffer({
         size: vertices.byteLength,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,

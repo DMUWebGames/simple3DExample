@@ -1,5 +1,5 @@
 // The scene manages everything
-import { sphericalVertexBuffer, sphericalVertices } from "../sphere.js";
+import { sphericalVertexBuffer, sphericalVertices } from "./sphere.js";
 import { device, format, ctx } from "./setup.js";
 import { Thing } from "./thing.js";
 
@@ -13,7 +13,7 @@ const module = await createShader('shaders/thing.wgsl');
 
 export class Scene {
     constructor(nThings) {
-        const [b, v] = sphericalVertexBuffer(device, 8);
+        const [b, v] = sphericalVertexBuffer(device, 12, 0.2);
         this.vertexBuffer = b;
         this.nVertices = v;
         this.things = Array.from({length: nThings}, () => Thing.random());
