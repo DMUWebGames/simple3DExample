@@ -1,4 +1,4 @@
-import { mat4 } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
+import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
 
 export function mappedBuffer(device, data, args) { 
     const buffer = device.createBuffer({
@@ -12,9 +12,11 @@ export function mappedBuffer(device, data, args) {
 }
 
 export function randomOrientation(tm) {
-    tm = mat4.rotateX(tm, 4 * Math.PI * (Math.random() - 0.5));
-    tm = mat4.rotateY(tm, 4 * Math.PI * (Math.random() - 0.5));
-    return mat4.rotateZ(tm, 4 * Math.PI * (Math.random() - 0.5));
+    return vec3.create(
+        (Math.random() - 0.5) * 0.1,
+        (Math.random() - 0.5) * 0.1,
+        (Math.random() - 0.5) * 0.1
+    );
 }
 
 export function randomTranslation() {    

@@ -1,7 +1,7 @@
 // The scene manages everything
 import { sphericalVertexBuffer } from "./sphere.js";
 import { device, format, ctx, canvas } from "./setup.js";
-import { Thing } from "./thing.js";
+import Thing from "./thing.js";
 import Camera from "./camera.js";
 
 async function createShader(path, options) {
@@ -78,7 +78,14 @@ export class Scene {
             },
             primitive: {
                 topology: "triangle-list"
-            }
+            },
+            depthStencil: {
+                format: "depth24plus",
+                depthWriteEnabled: true,
+                depthCompare: "less",
+                stencil: {},
+                bias: {},
+            },
         });
 
         this.renderBindGroup = device.createBindGroup({
@@ -103,7 +110,17 @@ export class Scene {
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
         this.camera.update(canvas);
+
+        // depth texture
+        this.depthTexture = device.createTexture({
+            size: [canvas.width, canvas.height],
+            format: "depth24plus",
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });        
+
+
         this.resizeRequired = true;
+        console.log(this.depthTexture)
     }
 
     render() {
@@ -116,7 +133,13 @@ export class Scene {
                 // clearValue: [0, 1, 0, 1],
                 loadOp: "clear",
                 storeOp: "store"
-            }]
+            }],
+            depthStencilAttachment: {
+                view: this.depthTexture.createView(),
+                depthClearValue: 1.0,
+                depthLoadOp: "clear",
+                depthStoreOp: "store",
+            }
         });
 
         if(this.resizeRequired) {
@@ -134,12 +157,20 @@ export class Scene {
         device.queue.submit([encoder.finish()]);
     }
 
-    update() {
-        this.things.forEach(thing => thing.update());
+    update(elapsed) {
+        this.things.forEach(thing => thing.update(elapsed));
+        this.things = this.things.filter(thing => !thing.dead);
+        while(this.things.length < 1000) {
+            console.log("adding new thing");
+            this.things.push(Thing.random());
+        }
+        console.log(`things: ${this.things.length}`);
     }
 
-    animate() {
-        this.update();
+    animate(ts) {
+        const elapsed = ts - this.prev || 0;
+        this.prev = ts;
+        this.update(elapsed / 1000);
         this.render();
         requestAnimationFrame(this.animate.bind(this))
     }
