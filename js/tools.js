@@ -1,3 +1,5 @@
+import { mat4 } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
+
 export function mappedBuffer(device, data, args) { 
     const buffer = device.createBuffer({
         ...args,
