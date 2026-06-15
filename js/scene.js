@@ -1,5 +1,5 @@
 // The scene manages everything
-import { sphericalVertexBuffer, sphericalVertices } from "./sphere.js";
+import { sphericalVertexBuffer } from "./sphere.js";
 import { device, format, ctx, canvas } from "./setup.js";
 import { Thing } from "./thing.js";
 
@@ -25,7 +25,8 @@ export class Scene {
     constructor(things) {
 
         // vertices (just things for now)
-        const [b, v] = sphericalVertexBuffer(device, 25, 0.2);
+        const segmentCount = 50;
+        const [b, v] = sphericalVertexBuffer(device, segmentCount, 0.2);
         this.vertexBuffer = b;
         this.nVertices = v;
         this.things = things;
