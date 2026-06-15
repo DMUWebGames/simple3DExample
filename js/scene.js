@@ -2,6 +2,7 @@
 import { sphericalVertexBuffer } from "./sphere.js";
 import { device, format, ctx, canvas } from "./setup.js";
 import { Thing } from "./thing.js";
+import Camera from "./camera.js";
 
 async function createShader(path, options) {
     const response = await fetch(path);
@@ -24,13 +25,18 @@ export class Scene {
 
     constructor(things) {
 
+        this.camera = new Camera(canvas);
+
         // vertices (just things for now)
-        const segmentCount = 50;
-        const [b, v] = sphericalVertexBuffer(device, segmentCount, 0.2);
+        const segmentCount = 10;
+        const [b, v] = sphericalVertexBuffer(device, segmentCount, 1);
         this.vertexBuffer = b;
         this.nVertices = v;
+
+        // thing data (model matrices)
         this.things = things;
-        const thingData = new Float32Array(this.things.map(thing => thing.data).flat());
+        const thingData = this.thingData;
+        // console.log(thingData);
         this.thingBuffer = device.createBuffer({
             size: thingData.byteLength,
             mappedAtCreation: true,
@@ -39,10 +45,10 @@ export class Scene {
         new Float32Array(this.thingBuffer.getMappedRange()).set(thingData);
         this.thingBuffer.unmap();
 
-        // uniform buffer (canvas)
-        this.canvasBuffer = device.createBuffer({
-            label: 'canvas size',
-            size: 2 * 4, // width and height is two floats
+        // uniform buffer (camera)
+        this.cameraBuffer = device.createBuffer({
+            label: 'camera uniform buffer',
+            size: 2 * 16 * 4, // the view and projection matrices (2 * 16 floats) * 4 bytes per float
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
@@ -79,7 +85,7 @@ export class Scene {
             layout: this.renderPipeline.getBindGroupLayout(0),
             entries: [
                 { binding: 0, resource: { buffer: this.thingBuffer } },
-                { binding: 1, resource: { buffer: this.canvasBuffer } }
+                { binding: 1, resource: { buffer: this.cameraBuffer } }
             ]
         });
 
@@ -88,15 +94,21 @@ export class Scene {
 
     }
 
+    get thingData() {
+        return new Float32Array(this.things.map(thing => thing.matrix).flat());
+    }
+
     resize() {
         console.log("resizing canvas");
-        
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
+        this.camera.update(canvas);
         this.resizeRequired = true;
     }
 
     render() {
+        device.queue.writeBuffer(this.thingBuffer, 0, this.thingData);
+
         const encoder = device.createCommandEncoder();
         const renderPass = encoder.beginRenderPass({
             colorAttachments: [{
@@ -106,9 +118,10 @@ export class Scene {
                 storeOp: "store"
             }]
         });
+
         if(this.resizeRequired) {
             console.log("updating uniform");
-            device.queue.writeBuffer(this.canvasBuffer, 0, this.canvasSize);
+            device.queue.writeBuffer(this.cameraBuffer, 0, this.camera.data);
             this.resizeRequired = false;
         }
 
@@ -121,7 +134,12 @@ export class Scene {
         device.queue.submit([encoder.finish()]);
     }
 
+    update() {
+        this.things.forEach(thing => thing.update());
+    }
+
     animate() {
+        this.update();
         this.render();
         requestAnimationFrame(this.animate.bind(this))
     }
