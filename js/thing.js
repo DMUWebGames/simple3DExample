@@ -7,6 +7,7 @@ export default class Thing {
 
     static random({center=vec3.create(0, 0, 0), radius=100, maxCrossTimeInSeconds=10, size=1}) {
         const location = randomInSphere(radius);
+        vec3.add(location, center, location);
         const speed = (radius * 2) / maxCrossTimeInSeconds * Math.random();   // units per second
         const translation = randomDirection();
         vec3.mulScalar(translation, speed, translation);
