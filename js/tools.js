@@ -19,10 +19,26 @@ export function randomOrientation(tm) {
     );
 }
 
-export function randomTranslation() {    
-    return mat4.translation([
-        (Math.random() - 0.5) * 2,
-        (Math.random() - 0.5) * 2,
-        0.25,        
-    ]);
+export function randomDirection() {
+    const dir = vec3.create(
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1,
+        Math.random() * 2 - 1
+    );
+    vec3.normalize(dir, dir);
+    return dir;
+}
+
+export function randomInSphere(radius = 100) {
+    let p;
+    do {
+        p = vec3.create(
+            Math.random() * 2 - 1,
+            Math.random() * 2 - 1,
+            Math.random() * 2 - 1
+        );
+    } while (vec3.len(p) > 1);   // reject if outside unit sphere
+
+    vec3.mulScalar(p, radius, p);   // scale to desired radius
+    return p;
 }

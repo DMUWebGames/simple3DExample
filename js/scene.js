@@ -1,4 +1,3 @@
-// The scene manages everything
 import { sphericalVertexBuffer } from "./sphere.js";
 import { device, format, ctx, canvas } from "./setup.js";
 import Thing from "./thing.js";
@@ -12,22 +11,19 @@ async function createShader(path, options) {
 
 const module = await createShader('shaders/thing.wgsl');
 
-export class Scene {
-
-    static withNThings(nThings) { 
-        const things = Array.from({ length: nThings }, () => Thing.random());
-        return new Scene(things);
-    }
+export default class Scene {
 
     get canvasSize() {
         return new Float32Array([canvas.width, canvas.height]);
     }
 
-    constructor(things) {
+    constructor(radius, things, newThingCallback) {
+        this.radius = radius;
+        this.newThingCallback = newThingCallback;
 
         this.camera = new Camera(canvas);
 
-        // vertices (just things for now)
+        // sphere vertices
         const segmentCount = 10;
         const [b, v] = sphericalVertexBuffer(device, segmentCount, 1);
         this.vertexBuffer = b;
@@ -35,8 +31,8 @@ export class Scene {
 
         // thing data (model matrices)
         this.things = things;
+        this.nThings = things.length;
         const thingData = this.thingData;
-        // console.log(thingData);
         this.thingBuffer = device.createBuffer({
             size: thingData.byteLength,
             mappedAtCreation: true,
@@ -88,6 +84,7 @@ export class Scene {
             },
         });
 
+        // bind buffers to shader
         this.renderBindGroup = device.createBindGroup({
             layout: this.renderPipeline.getBindGroupLayout(0),
             entries: [
@@ -96,20 +93,32 @@ export class Scene {
             ]
         });
 
+        // handle canvas resizing
         window.addEventListener("resize", this.resize.bind(this));
         window.dispatchEvent(new Event("resize"));
 
-    }
 
-    get thingData() {
-        return new Float32Array(this.things.map(thing => thing.matrix).flat());
+        // handling user interaction
+        // The WASD keys rotate around the origin
+        this.keys = {};
+        this.keyMap = {
+            "w": [0, 0, -1],
+            "a": [-1, 0, 0],
+            "s": [0, 0, 1],
+            "d": [1, 0, 0],
+        };
+
+        window.addEventListener("keydown", ev => { this.keys[ev.key] = true;});
+        window.addEventListener("keyup", ev => {delete this.keys[ev.key];});
+
+
     }
 
     resize() {
         console.log("resizing canvas");
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
-        this.camera.update(canvas);
+        this.camera.resize(canvas);
 
         // depth texture
         this.depthTexture = device.createTexture({
@@ -120,7 +129,10 @@ export class Scene {
 
 
         this.resizeRequired = true;
-        console.log(this.depthTexture)
+    }
+
+    get thingData() {
+        return new Float32Array(this.things.map(thing => thing.matrix).flat());
     }
 
     render() {
@@ -158,13 +170,14 @@ export class Scene {
     }
 
     update(elapsed) {
-        this.things.forEach(thing => thing.update(elapsed));
-        this.things = this.things.filter(thing => !thing.dead);
-        while(this.things.length < 1000) {
-            console.log("adding new thing");
-            this.things.push(Thing.random());
-        }
-        console.log(`things: ${this.things.length}`);
+
+        this.things.forEach(thing => {
+            thing.update(elapsed);
+            if(thing.distanceFrom(this.camera.location) > this.radius) {
+                thing.wrapAround(this.camera.location, this.radius);
+            }
+        });
+
     }
 
     animate(ts) {

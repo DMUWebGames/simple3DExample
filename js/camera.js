@@ -2,18 +2,27 @@ import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.
 
 export default class Camera {
     constructor(canvas) {
-        this.viewMatrix = mat4.create();
-        this.projMatrix = mat4.create();
+        this.location = vec3.create(0, 0, 0);
+        this.up = vec3.create(0, 1, 0);
+        this.focus = vec3.create(0, 0, 10);
+        this.resize(canvas);
 
         // View: Move the camera back by 3 units on the Z-axis
         // LookAt parameters: (cameraPosition, targetPosition, upVector)
-        mat4.lookAt(vec3.create(0, 0, 3), vec3.create(0, 0, 0), vec3.create(0, 1, 0), this.viewMatrix);
-        this.update(canvas);
+        // mat4.lookAt(this.location, this.focus, this.up, this.viewMatrix);
+        // this.resize(canvas);
     }
 
-    update(canvas) {
-        const aspect = canvas.width / canvas.height;
-        mat4.perspective((60 * Math.PI) / 180, aspect, 0.1, 100.0, this.projMatrix);
+    resize(canvas) {
+        this.aspect = canvas.width / canvas.height;
+    }
+
+    get viewMatrix() {
+        return mat4.lookAt(this.location, this.focus, this.up);
+    }
+
+    get projMatrix() {
+        return mat4.perspective((60 * Math.PI) / 180, this.aspect, 0.1, 100.0);
     }
 
     get data() {

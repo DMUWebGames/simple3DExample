@@ -1,8 +1,15 @@
-import { Scene } from "./js/scene.js";
-import Thing from "./js/thing.js";
 import { canvas } from "./js/setup.js";
+import Scene from "./js/scene.js";
+import Thing from "./js/thing.js";
 
-const scene = Scene.withNThings(500);
+function createThing(radius) {
+    return Thing.random({radius});
+}
+
+const radius = 90;
+const nThings = 1000;
+const things = Array.from({length: nThings}, () => createThing(radius));
+const scene = new Scene(radius, things, createThing);
 
 scene.animate();
 
