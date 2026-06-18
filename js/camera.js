@@ -1,10 +1,12 @@
 import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
 
 export default class Camera {
-    constructor(canvas) {
+    constructor(canvas, radius) {
         this.location = vec3.create(0, 0, 0);
         this.up = vec3.create(0, 1, 0);
         this.focus = vec3.create(0, 0, 10);
+        this.near = 0.1;
+        this.far = radius;
         this.resize(canvas);
 
         // View: Move the camera back by 3 units on the Z-axis
@@ -22,7 +24,7 @@ export default class Camera {
     }
 
     get projMatrix() {
-        return mat4.perspective((60 * Math.PI) / 180, this.aspect, 0.1, 100.0);
+        return mat4.perspective((60 * Math.PI) / 180, this.aspect, this.near, this.far);
     }
 
     get data() {

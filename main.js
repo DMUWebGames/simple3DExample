@@ -2,14 +2,11 @@ import { canvas } from "./js/setup.js";
 import Scene from "./js/scene.js";
 import Thing from "./js/thing.js";
 
-function createThing(radius) {
-    return Thing.random({radius});
-}
-
-const radius = 90;
-const nThings = 1000;
-const things = Array.from({length: nThings}, () => createThing(radius));
-const scene = new Scene(radius, things, createThing);
+const radius = 500;
+const maxCrossTimeInSeconds = 100;
+const nThings = 10000;
+const things = Array.from({length: nThings}, () => Thing.random({radius, maxCrossTimeInSeconds}));
+const scene = new Scene(radius, things);
 
 scene.animate();
 

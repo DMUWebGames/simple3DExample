@@ -17,11 +17,9 @@ export default class Scene {
         return new Float32Array([canvas.width, canvas.height]);
     }
 
-    constructor(radius, things, newThingCallback) {
+    constructor(radius, things) {
         this.radius = radius;
-        this.newThingCallback = newThingCallback;
-
-        this.camera = new Camera(canvas);
+        this.camera = new Camera(canvas, this.radius);
 
         // sphere vertices
         const segmentCount = 10;
