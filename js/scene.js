@@ -97,16 +97,34 @@ export default class Scene {
 
 
         // handling user interaction
-        // The WASD keys rotate around the origin
         this.keys = {};
-        this.keyMap = {
-            "w": [0, 0, -1],
-            "a": [-1, 0, 0],
-            "s": [0, 0, 1],
-            "d": [1, 0, 0],
+        this.controlMap = {
+            "w": { thrust: 1 },
+            "s": { thrust: -1 },
+            "a": { roll: -1 },
+            "d": { roll: 1 },
         };
+        this.mouseDelta = { x: 0, y: 0 };
 
-        window.addEventListener("keydown", ev => { this.keys[ev.key] = true;});
+        canvas.addEventListener("click", () => {
+            if (document.pointerLockElement !== canvas && canvas.requestPointerLock) {
+                canvas.requestPointerLock();
+            }
+        });
+
+        window.addEventListener("mousemove", ev => {
+            if (document.pointerLockElement === canvas) {
+                this.mouseDelta.x += ev.movementX;
+                this.mouseDelta.y += ev.movementY;
+            }
+        });
+
+        window.addEventListener("keydown", ev => {
+            if (this.controlMap[ev.key]) {
+                ev.preventDefault();
+            }
+            this.keys[ev.key] = true;
+        });
         window.addEventListener("keyup", ev => {delete this.keys[ev.key];});
 
 
@@ -135,6 +153,7 @@ export default class Scene {
 
     render() {
         device.queue.writeBuffer(this.thingBuffer, 0, this.thingData);
+        device.queue.writeBuffer(this.cameraBuffer, 0, this.camera.data);
 
         const encoder = device.createCommandEncoder();
         const renderPass = encoder.beginRenderPass({
@@ -152,12 +171,6 @@ export default class Scene {
             }
         });
 
-        if(this.resizeRequired) {
-            console.log("updating uniform");
-            device.queue.writeBuffer(this.cameraBuffer, 0, this.camera.data);
-            this.resizeRequired = false;
-        }
-
         renderPass.setPipeline(this.renderPipeline);
         renderPass.setBindGroup(0, this.renderBindGroup);
         renderPass.setVertexBuffer(0, this.vertexBuffer);
@@ -168,6 +181,24 @@ export default class Scene {
     }
 
     update(elapsed) {
+        const thrust = (this.keys.w ? 1 : 0) + (this.keys.s ? -1 : 0);
+        const roll = (this.keys.d ? 1 : 0) + (this.keys.a ? -1 : 0);
+
+        if (this.mouseDelta.x || this.mouseDelta.y) {
+            this.camera.addMouseLook(this.mouseDelta.x, this.mouseDelta.y);
+            this.mouseDelta.x = 0;
+            this.mouseDelta.y = 0;
+        }
+
+        if (roll) {
+            this.camera.addRoll(roll, elapsed);
+        }
+
+        if (thrust) {
+            this.camera.applyThrust(thrust, elapsed);
+        }
+
+        this.camera.update(elapsed);
 
         this.things.forEach(thing => {
             thing.update(elapsed);
