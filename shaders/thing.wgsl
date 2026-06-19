@@ -1,6 +1,12 @@
+// from the vertexbufffer
+struct VertexInput {
+    @location(0) position: vec3<f32>,
+    @location(1) uv: vec2<f32>
+};
+
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
-    @location(0) colour: vec4<f32>
+    @location(0) uv: vec2<f32>
 };
 
 struct Thing {
@@ -15,19 +21,25 @@ struct Camera {
 @group(0) @binding(0) var<storage> things: array<Thing>;
 @group(0) @binding(1) var<uniform> camera: Camera;
 
+@group(0) @binding(2) var mySampler: sampler;
+@group(0) @binding(3) var myTexture: texture_2d<f32>;
+
 @vertex
-fn vsMain(@builtin(instance_index) instanceIndex: u32, @location(0) position: vec3<f32>) -> VertexOutput {
+fn vsMain(@builtin(instance_index) instanceIndex: u32, input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     let thing = things[instanceIndex];
-    // var aspect = camera.projMatrix[0][0] / camera.projMatrix[1][1];
-    output.colour = vec4(1-position.x, 1-position.y, 0.5, 1);
-    // output.position = (thing.transformationMatrix * vec4<f32>(position.x, position.y * aspect, position.z, 1));
-    // output.position = (vec4<f32>(position.x * canvas.width, position.y * canvas.height, position.z, 1) * thing.transformationMatrix);
-    output.position = camera.projMatrix * camera.viewMatrix * thing.modelMatrix * vec4<f32>(position, 1);
+    output.position = camera.projMatrix * camera.viewMatrix * thing.modelMatrix * vec4<f32>(input.position, 1);
+    output.uv = input.uv;//vec4(1-input.position.x, 1, 1, 1);
     return output;
 }
 
 @fragment
 fn fsMain(input: VertexOutput) -> @location(0) vec4<f32> {
-    return input.colour;
+
+    // I need uv coordinates for this
+    let s = mySampler;
+    let t = myTexture;
+
+    // return input.colour;
+    return textureSample(myTexture, mySampler, input.uv);
 }

@@ -2,6 +2,7 @@ import { sphericalVertexBuffer } from "./sphere.js";
 import { device, format, ctx, canvas, speedometer } from "./setup.js";
 import Thing from "./thing.js";
 import Camera from "./camera.js";
+import { loadTexture } from "./texture.js";
 
 async function createShader(path, options) {
     const response = await fetch(path);
@@ -10,6 +11,8 @@ async function createShader(path, options) {
 }
 
 const module = await createShader('shaders/thing.wgsl');
+const texture = await loadTexture('textures/asteroid3.png');
+const sampler = device.createSampler();
 
 export default class Scene {
 
@@ -43,6 +46,7 @@ export default class Scene {
         new Float32Array(this.thingBuffer.getMappedRange()).set(thingData);
         this.thingBuffer.unmap();
 
+
         // uniform buffer (camera)
         this.cameraBuffer = device.createBuffer({
             label: 'camera uniform buffer',
@@ -58,13 +62,10 @@ export default class Scene {
                 entryPoint: "vsMain",
                 buffers: [
                     {
-                        arrayStride: 12, // 3 * 4 bytes (vec3<f32>)
+                        arrayStride: 20, // x, y, z, u, v = 5 * 4 bytes (vec3<f32>)
                         attributes: [
-                            {
-                                shaderLocation: 0,
-                                offset: 0,
-                                format: "float32x3"
-                            }
+                            { shaderLocation: 0, offset: 0, format: "float32x3" }, // x, y, z
+                            { shaderLocation: 1, offset: 12, format: "float32x2" }, // u, v
                         ]
                     }
                 ]
@@ -86,12 +87,16 @@ export default class Scene {
             },
         });
 
+        
+
         // bind buffers to shader
         this.renderBindGroup = device.createBindGroup({
             layout: this.renderPipeline.getBindGroupLayout(0),
             entries: [
                 { binding: 0, resource: { buffer: this.thingBuffer } },
-                { binding: 1, resource: { buffer: this.cameraBuffer } }
+                { binding: 1, resource: { buffer: this.cameraBuffer } },
+                { binding: 2, resource: sampler },
+                { binding: 3, resource: texture, }
             ]
         });
 
@@ -174,7 +179,7 @@ export default class Scene {
         renderPass.setPipeline(this.renderPipeline);
         renderPass.setBindGroup(0, this.renderBindGroup);
         renderPass.setVertexBuffer(0, this.vertexBuffer);
-        renderPass.draw(this.nVertices / 3, this.things.length, 0, 0); // draw the cube
+        renderPass.draw(this.nVertices / 5, this.things.length, 0, 0); // draw the cube
 
         renderPass.end();        
         device.queue.submit([encoder.finish()]);

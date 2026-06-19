@@ -15,7 +15,7 @@ const size = 500;
 const nThings = 10000;
 
 // resolution of the thing vetices
-const segmentCount = 25;
+const segmentCount = 20;
 
 // Create things and add them to the scene
 const things = Array.from({length: nThings}, () => Thing.random({radius, maxCrossTimeInSeconds, size}));

@@ -1,11 +1,12 @@
 import { mappedBuffer } from "./tools.js";
 
 function createVertex(theta, phi, r) {
-    return [
-        Math.sin(theta) * Math.cos(phi) * r,
-        Math.sin(theta) * Math.sin(phi) * r,
-        Math.cos(theta) * r,
-    ]
+    const x = Math.sin(theta) * Math.cos(phi) * r;
+    const y = Math.sin(theta) * Math.sin(phi) * r;
+    const z = Math.cos(theta) * r;
+    const u = Math.atan2(x, z) / 2 * Math.PI;
+    const v = Math.asin(y) / Math.PI
+    return [x, y, z, u, v];
 }
 
 export function sphericalVertices(segmentCount, size) {
