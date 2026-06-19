@@ -127,7 +127,6 @@ export default class Scene {
         });
         window.addEventListener("keyup", ev => {delete this.keys[ev.key];});
 
-
     }
 
     resize() {
@@ -142,9 +141,6 @@ export default class Scene {
             format: "depth24plus",
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
         });        
-
-
-        this.resizeRequired = true;
     }
 
     get thingData() {

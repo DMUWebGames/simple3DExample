@@ -9,10 +9,10 @@ export default class Camera {
         this.right = vec3.create(1, 0, 0);
         this.near = 0.1;
         this.far = radius;
-        this.thrustAcceleration = radius * 1.5;
-        this.mouseSensitivity = 0.0025;
+        this.thrustAcceleration = radius * 0.5;
+        this.mouseSensitivity = 0.001;
         this.rollSpeed = 1.75;
-        this.drag = 0.25;
+        this.drag = 0;
         this.resize(canvas);
     }
 
@@ -34,7 +34,7 @@ export default class Camera {
     }
 
     addMouseLook(deltaX, deltaY) {
-        const yawAmount = deltaX * this.mouseSensitivity;
+        const yawAmount = -deltaX * this.mouseSensitivity;
         const pitchAmount = -deltaY * this.mouseSensitivity;
 
         this.forward = vec3.normalize(this.rotateVectorAroundAxis(this.forward, this.up, yawAmount));
