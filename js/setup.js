@@ -12,11 +12,9 @@ try {
 }
 
 export const canvas = document.createElement('canvas');
-document.body.append(canvas);
-document.body.style.display = "grid";
-document.body.style.margin = "0";
-document.body.style.minHeight = "100dvh";
-canvas.style.backgroundColor = "hsl(0 0% 10%)";
+export const speedometer = document.createElement('meter');
+speedometer.className = "speed";
+document.body.append(canvas, speedometer);
 
 export const format = navigator.gpu.getPreferredCanvasFormat();
 export const ctx = canvas.getContext('webgpu');

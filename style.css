@@ -1,5 +1,22 @@
 body {
+    font-family: monospace;
     display: grid;
     height: 100svh;
     margin: 0;
+    > * {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    meter.speed {
+        width: 30%;
+        padding-inline: 1rem;
+        margin-top: 1rem;
+        display: flex;
+        gap: 1ch;
+        align-items: center;
+        &::before {
+            content: "speed: ";
+            color: white;
+        }
+    }
 }

@@ -1,5 +1,5 @@
 import { sphericalVertexBuffer } from "./sphere.js";
-import { device, format, ctx, canvas } from "./setup.js";
+import { device, format, ctx, canvas, speedometer } from "./setup.js";
 import Thing from "./thing.js";
 import Camera from "./camera.js";
 
@@ -17,12 +17,16 @@ export default class Scene {
         return new Float32Array([canvas.width, canvas.height]);
     }
 
-    constructor(radius, things) {
+    constructor(radius, things, segmentCount) {
         this.radius = radius;
         this.camera = new Camera(canvas, this.radius);
+        speedometer.max = this.camera.maxSpeed;
+        speedometer.low = this.camera.maxSpeed * 0.1;
+        speedometer.optimum = this.camera.maxSpeed * 0.3;
+        speedometer.high = this.camera.maxSpeed * 0.6;
 
         // sphere vertices
-        const segmentCount = 10;
+        
         const [b, v] = sphericalVertexBuffer(device, segmentCount, 1);
         this.vertexBuffer = b;
         this.nVertices = v;
@@ -196,8 +200,6 @@ export default class Scene {
         }
 
         if (brake) {
-            console.log("!");
-            
             this.camera.applyBrake(brake, elapsed);
         }
 
@@ -209,6 +211,7 @@ export default class Scene {
                 thing.wrapAround(this.camera.location, this.radius);
             }
         });
+        speedometer.value = this.camera.speed;
 
     }
 

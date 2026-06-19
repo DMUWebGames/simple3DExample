@@ -9,6 +9,7 @@ export default class Camera {
         this.right = vec3.create(1, 0, 0);
         this.near = 0.1;
         this.far = radius;
+        this.maxSpeed = radius / 10;
         this.thrustAcceleration = radius * 0.005;
         this.mouseSensitivity = 0.001;
         this.rollSpeed = 1.75;
@@ -53,13 +54,15 @@ export default class Camera {
     applyThrust(amount, elapsed) {
         const forward = vec3.create(this.forward[0], this.forward[1], this.forward[2]);
         vec3.mulScalar(forward, amount * this.thrustAcceleration * elapsed, forward);
-        vec3.add(this.velocity, forward, this.velocity);
+        const newVelocity = vec3.add(this.velocity, forward);
+        if(vec3.len(newVelocity) < this.maxSpeed) {
+            this.velocity = newVelocity;
+            // vec3.add(this.velocity, forward, this.velocity);
+        }
     }
 
     applyBrake(amount, elapsed) {
         const speed = vec3.len(this.velocity);
-        console.log(speed);
-        
         if (!speed) {
             return;
         }
@@ -80,6 +83,10 @@ export default class Camera {
         vec3.add(this.location, vec3.mulScalar(this.velocity, elapsed, vec3.create()), this.location);
     }
 
+    get speed() {
+        return vec3.len(this.velocity);
+    }
+
     get viewMatrix() {
         const focus = vec3.add(this.location, this.forward, vec3.create());
         return mat4.lookAt(this.location, focus, this.up);
@@ -92,6 +99,4 @@ export default class Camera {
     get data() {
         return new Float32Array([...this.viewMatrix, ...this.projMatrix]);
     }
-
-
 }
