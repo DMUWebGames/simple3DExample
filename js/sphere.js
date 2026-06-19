@@ -4,8 +4,8 @@ function createVertex(theta, phi, r) {
     const x = Math.sin(theta) * Math.cos(phi) * r;
     const y = Math.sin(theta) * Math.sin(phi) * r;
     const z = Math.cos(theta) * r;
-    const u = Math.atan2(x, z) / 2 * Math.PI;
-    const v = Math.asin(y) / Math.PI
+    const u = 0.5 + Math.atan2(y, x) / (2 * Math.PI);
+    const v = 0.5 - Math.asin(z / r) / Math.PI;
     return [x, y, z, u, v];
 }
 
