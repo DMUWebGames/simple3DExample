@@ -9,7 +9,7 @@ export default class Camera {
         this.right = vec3.create(1, 0, 0);
         this.near = 0.1;
         this.far = radius;
-        this.thrustAcceleration = radius * 0.5;
+        this.thrustAcceleration = radius * 0.005;
         this.mouseSensitivity = 0.001;
         this.rollSpeed = 1.75;
         this.drag = 0;
@@ -54,6 +54,25 @@ export default class Camera {
         const forward = vec3.create(this.forward[0], this.forward[1], this.forward[2]);
         vec3.mulScalar(forward, amount * this.thrustAcceleration * elapsed, forward);
         vec3.add(this.velocity, forward, this.velocity);
+    }
+
+    applyBrake(amount, elapsed) {
+        const speed = vec3.len(this.velocity);
+        console.log(speed);
+        
+        if (!speed) {
+            return;
+        }
+
+        const brakeAmount = Math.min(speed, amount * this.thrustAcceleration * elapsed);
+        const nextSpeed = Math.max(0, speed - brakeAmount);
+
+        if (!nextSpeed) {
+            this.velocity = vec3.create(0, 0, 0);
+            return;
+        }
+
+        vec3.mulScalar(this.velocity, nextSpeed / speed, this.velocity);
     }
 
     update(elapsed) {

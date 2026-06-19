@@ -100,7 +100,7 @@ export default class Scene {
         this.keys = {};
         this.controlMap = {
             "w": { thrust: 1 },
-            "s": { thrust: -1 },
+            "s": { brake: 1 },
             "a": { roll: -1 },
             "d": { roll: 1 },
         };
@@ -177,7 +177,8 @@ export default class Scene {
     }
 
     update(elapsed) {
-        const thrust = (this.keys.w ? 1 : 0) + (this.keys.s ? -1 : 0);
+        const thrust = (this.keys.w ? 1 : 0);// + (this.keys.s ? -1 : 0);
+        const brake = this.keys.s ? 1 : 0;
         const roll = (this.keys.d ? 1 : 0) + (this.keys.a ? -1 : 0);
 
         if (this.mouseDelta.x || this.mouseDelta.y) {
@@ -192,6 +193,12 @@ export default class Scene {
 
         if (thrust) {
             this.camera.applyThrust(thrust, elapsed);
+        }
+
+        if (brake) {
+            console.log("!");
+            
+            this.camera.applyBrake(brake, elapsed);
         }
 
         this.camera.update(elapsed);
