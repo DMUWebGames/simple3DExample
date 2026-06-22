@@ -11,7 +11,7 @@ async function createShader(path, options) {
 }
 
 const module = await createShader('shaders/thing.wgsl');
-const texture = await loadTexture('textures/asteroid3.png');
+const texture = await loadTexture('textures/asteroid.jpg');
 const sampler = device.createSampler();
 
 export default class Scene {
