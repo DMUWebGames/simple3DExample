@@ -6,19 +6,20 @@ import Thing from "./js/thing.js";
 const radius = 1000000;
 
 // Minimum speed of things, how long they take to cross the world
-const maxCrossTimeInSeconds = 1000;
+const maxCrossTimeInSeconds = 10000;
 
 // Size of things
-const size = 500;
+const size = 1000;
 
 // Number of things
-const nThings = 10000;
+const nThings = 2000;
 
 // resolution of the thing vetices
-const segmentCount = 20;
+const segmentCount = 16;
 
 // Create things and add them to the scene
 const things = Array.from({length: nThings}, () => Thing.random({radius, maxCrossTimeInSeconds, size}));
+
 const scene = new Scene(radius, things, segmentCount);
 
 scene.animate();
