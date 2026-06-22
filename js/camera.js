@@ -7,7 +7,7 @@ export default class Camera {
         this.forward = vec3.create(0, 0, 1);
         this.up = vec3.create(0, 1, 0);
         this.right = vec3.create(1, 0, 0);
-        this.near = 0.1;
+        this.near = 100;
         this.far = radius;
         this.maxSpeed = radius / 10;
         this.thrustAcceleration = radius * 0.005;
