@@ -41,5 +41,5 @@ export function sphericalVertexBuffer(device, segments, size) {
     const vertexBuffer = mappedBuffer(device, vertices, {
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,        
     });
-    return [vertexBuffer, vertices.length];
+    return [vertexBuffer, vertices.length / 5];
 }

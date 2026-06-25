@@ -97,6 +97,6 @@ export default class Camera {
     }
 
     get data() {
-        return new Float32Array([...this.viewMatrix, ...this.projMatrix]);
+        return new Float32Array([...this.viewMatrix, ...this.projMatrix, ...this.location]);
     }
 }

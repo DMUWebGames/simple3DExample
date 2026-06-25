@@ -1,8 +1,9 @@
 import { sphericalVertexBuffer } from "./sphere.js";
 import { device, format, ctx, canvas, speedometer } from "./setup.js";
-import Thing from "./thing.js";
 import Camera from "./camera.js";
 import { loadTexture } from "./texture.js";
+import { cubeVertexBuffer } from "./cube.js";
+import { Light } from "./light.js";
 
 async function createShader(path, options) {
     const response = await fetch(path);
@@ -10,7 +11,8 @@ async function createShader(path, options) {
     return device.createShaderModule({ code, label: path });
 }
 
-const module = await createShader('shaders/thing.wgsl');
+const asteroidModule = await createShader('shaders/thing.wgsl');
+const cubeModule = await createShader('shaders/cube.wgsl');
 const texture = await loadTexture('textures/asteroid.jpg');
 const sampler = device.createSampler();
 
@@ -20,7 +22,7 @@ export default class Scene {
         return new Float32Array([canvas.width, canvas.height]);
     }
 
-    constructor(radius, things, segmentCount) {
+    constructor(radius, asteroids, cubes, segmentCount) {
         this.radius = radius;
         this.camera = new Camera(canvas, this.radius);
         speedometer.max = this.camera.maxSpeed;
@@ -29,36 +31,52 @@ export default class Scene {
         speedometer.high = this.camera.maxSpeed * 0.6;
 
         // sphere vertices
+        let [b, v] = sphericalVertexBuffer(device, segmentCount, 1);
+        this.asteroidVertexBuffer = b;
+        this.nAsteroidVertices = v;
         
-        const [b, v] = sphericalVertexBuffer(device, segmentCount, 1);
-        this.vertexBuffer = b;
-        this.nVertices = v;
-
-        // thing data (model matrices)
-        this.things = things;
-        this.nThings = things.length;
-        const thingData = this.thingData;
-        this.thingBuffer = device.createBuffer({
-            size: thingData.byteLength,
+        // asteroid data (model matrices)
+        this.asteroids = asteroids;
+        const asteroidData = this.asteroidTransforms;
+        this.asteroidBuffer = device.createBuffer({
+            size: asteroidData.byteLength,
             mappedAtCreation: true,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
         });
-        new Float32Array(this.thingBuffer.getMappedRange()).set(thingData);
-        this.thingBuffer.unmap();
+        new Float32Array(this.asteroidBuffer.getMappedRange()).set(asteroidData);
+        this.asteroidBuffer.unmap();
+
+        // cube vertices
+        [b, v] = cubeVertexBuffer(device);
+        this.cubeVertexBuffer = b;
+        this.nCubeVertices = v;
+
+        // cube data
+        this.cubes = cubes;
+        const cubeData = this.cubeTransforms;
+        this.cubeBuffer = device.createBuffer({
+            size: cubeData.byteLength,
+            mappedAtCreation: true,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+        });
+        new Float32Array(this.cubeBuffer.getMappedRange()).set(cubeData);
+        this.cubeBuffer.unmap();
 
 
-        // uniform buffer (camera)
+        // uniform buffers
         this.cameraBuffer = device.createBuffer({
             label: 'camera uniform buffer',
-            size: 2 * 16 * 4, // the view and projection matrices (2 * 16 floats) * 4 bytes per float
+            size: 2 * 16 * 4 + 16, // the view and projection matrices (2 * 16 floats) * 4 bytes per float
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
 
+        this.light = new Light();
+
         // pipeline
-        this.renderPipeline = device.createRenderPipeline({
+        this.asteroidPipeline = device.createRenderPipeline({
             layout: "auto",
             vertex: {
-                module,
+                module: asteroidModule,
                 entryPoint: "vsMain",
                 buffers: [
                     {
@@ -71,7 +89,7 @@ export default class Scene {
                 ]
             },
             fragment: {
-                module,
+                module: asteroidModule,
                 entryPoint: "fsMain",
                 targets: [{ format }]
             },
@@ -87,18 +105,62 @@ export default class Scene {
             },
         });
 
+        this.cubePipeline = device.createRenderPipeline({
+            layout: "auto",
+            vertex: {
+                module: cubeModule,
+                entryPoint: "vsMain",
+                buffers: [
+                    {
+                        arrayStride: 24, // x, y, z, x, y, z = 6 * 4 bytes (vec3<f32>)
+                        attributes: [
+                            { shaderLocation: 0, offset: 0, format: "float32x3" }, // x, y, z
+                            { shaderLocation: 1, offset: 12, format: "float32x3" }, // x, y, z
+                        ]
+                    }
+                ]
+            },
+            fragment: {
+                module: cubeModule,
+                entryPoint: "fsMain",
+                targets: [{ format }]
+            },
+            primitive: {
+                topology: "triangle-list"
+            },
+            depthStencil: {
+                format: "depth24plus",
+                depthWriteEnabled: true,
+                depthCompare: "less",
+                stencil: {},
+                bias: {},
+            },
+        });
+
+
+
         
 
         // bind buffers to shader
-        this.renderBindGroup = device.createBindGroup({
-            layout: this.renderPipeline.getBindGroupLayout(0),
+        this.asteroidBindGroup = device.createBindGroup({
+            layout: this.asteroidPipeline.getBindGroupLayout(0),
             entries: [
-                { binding: 0, resource: { buffer: this.thingBuffer } },
+                { binding: 0, resource: { buffer: this.asteroidBuffer } },
                 { binding: 1, resource: { buffer: this.cameraBuffer } },
                 { binding: 2, resource: sampler },
                 { binding: 3, resource: texture, }
             ]
         });
+
+        this.cubeBindGroup = device.createBindGroup({
+            layout: this.cubePipeline.getBindGroupLayout(0),
+            entries: [
+                { binding: 0, resource: { buffer: this.cubeBuffer } },
+                { binding: 1, resource: { buffer: this.cameraBuffer } },
+                { binding: 2, resource: { buffer: this.light.buffer(device) } },
+            ]
+        });
+
 
         // handle canvas resizing
         window.addEventListener("resize", this.resize.bind(this));
@@ -152,13 +214,20 @@ export default class Scene {
         });        
     }
 
-    get thingData() {
-        return new Float32Array(this.things.map(thing => thing.matrix).flat());
+    get asteroidTransforms() {
+        return new Float32Array(this.asteroids.map(asteroids => asteroids.matrix).flat());
     }
 
+    get cubeTransforms() {
+        return new Float32Array(this.cubes.map(cube => cube.matrix).flat());
+    }
+
+
     render() {
-        device.queue.writeBuffer(this.thingBuffer, 0, this.thingData);
-        device.queue.writeBuffer(this.cameraBuffer, 0, this.camera.data);
+        
+
+// console.log("Cubes:", this.nCubeVertices, this.cubes.length);
+// console.log("Asteroids:", this.nAsteroidVertices, this.asteroids.length);
 
         const encoder = device.createCommandEncoder();
         const renderPass = encoder.beginRenderPass({
@@ -176,10 +245,17 @@ export default class Scene {
             }
         });
 
-        renderPass.setPipeline(this.renderPipeline);
-        renderPass.setBindGroup(0, this.renderBindGroup);
-        renderPass.setVertexBuffer(0, this.vertexBuffer);
-        renderPass.draw(this.nVertices / 5, this.things.length, 0, 0); // draw the cube
+        renderPass.setPipeline(this.cubePipeline);
+        renderPass.setBindGroup(0, this.cubeBindGroup);
+        renderPass.setVertexBuffer(0, this.cubeVertexBuffer);
+        renderPass.draw(this.nCubeVertices, this.cubes.length, 0, 0); // draw the cubes
+
+
+        renderPass.setPipeline(this.asteroidPipeline);
+        renderPass.setBindGroup(0, this.asteroidBindGroup);
+        renderPass.setVertexBuffer(0, this.asteroidVertexBuffer);
+        renderPass.draw(this.nAsteroidVertices, this.asteroids.length, 0, 0); // draw the asteroids
+
 
         renderPass.end();        
         device.queue.submit([encoder.finish()]);
@@ -210,14 +286,16 @@ export default class Scene {
 
         this.camera.update(elapsed);
 
-        this.things.forEach(thing => {
-            thing.update(elapsed);
-            if(thing.distanceFrom(this.camera.location) > this.radius) {
-                thing.wrapAround(this.camera.location, this.radius);
+        this.asteroids.forEach(asteroid => {
+            asteroid.update(elapsed);
+            if(asteroid.distanceFrom(this.camera.location) > this.radius) {
+                asteroid.wrapAround(this.camera.location, this.radius);
             }
         });
         speedometer.value = this.camera.speed;
 
+        device.queue.writeBuffer(this.asteroidBuffer, 0, this.asteroidTransforms);
+        device.queue.writeBuffer(this.cameraBuffer, 0, this.camera.data);
     }
 
     animate(ts) {

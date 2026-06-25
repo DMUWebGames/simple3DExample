@@ -11,7 +11,7 @@ export function mappedBuffer(device, data, args) {
     return buffer;
 }
 
-export function randomOrientation(tm) {
+export function randomOrientation() {
     return vec3.create(
         (Math.random() - 0.5) * 0.1,
         (Math.random() - 0.5) * 0.1,
