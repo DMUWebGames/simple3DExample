@@ -94,13 +94,6 @@ export class Cube {
         )
     }
 
-    update(elapsed) {
-        this.translation[0] += this.velocity[0] * elapsed;
-        this.translation[1] += this.velocity[1] * elapsed;
-        this.translation[2] += this.velocity[2] * elapsed;
-        this.angle += this.rotationSpeed * elapsed;
-    }
-
     constructor(translation, orientation, scale, velocity) {
         this.translation = translation;
         this.orientation = orientation;
@@ -111,6 +104,14 @@ export class Cube {
         this.velocity = velocity;
         this.rotationSpeed = Math.random() * 2 * Math.PI;
 
+    }
+
+    update(elapsed) {
+        
+        this.translation[0] += this.velocity[0] * elapsed;
+        this.translation[1] += this.velocity[1] * elapsed;
+        this.translation[2] += this.velocity[2] * elapsed;
+        this.angle += this.rotationSpeed * elapsed;
     }
 
     get matrix() {
