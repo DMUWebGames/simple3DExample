@@ -1,5 +1,5 @@
 import { vec3, mat4 } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
-import { mappedBuffer, randomOrientation } from "./tools.js";
+import { mappedBuffer, randomDirection, randomInSphere, randomOrientation } from "./tools.js";
 
 export const cubeVertices = new Float32Array([
   // +X face
@@ -66,6 +66,15 @@ export function cubeVertexBuffer(device) {
 
 export class Cube {
 
+    static random({center=vec3.create(0, 0, 0), radius=10000, maxCrossTimeInSeconds=10000, size=1}) {
+        const location = randomInSphere(radius);
+        vec3.add(location, center, location);
+        const speed = (radius * 2) / maxCrossTimeInSeconds * Math.random();   // units per second
+        const velocity = randomDirection();
+        vec3.mulScalar(velocity, speed, velocity);
+        return new Cube(location, randomOrientation(), vec3.create(size,size,size), velocity);        
+    }
+
     static place(z, size) {
         return new Cube (
             vec3.create(0, 0, z),
@@ -85,6 +94,13 @@ export class Cube {
         )
     }
 
+    update(elapsed) {
+        this.translation[0] += this.velocity[0] * elapsed;
+        this.translation[1] += this.velocity[1] * elapsed;
+        this.translation[2] += this.velocity[2] * elapsed;
+        this.angle += this.rotationSpeed * elapsed;
+    }
+
     constructor(translation, orientation, scale, velocity) {
         this.translation = translation;
         this.orientation = orientation;
@@ -93,12 +109,13 @@ export class Cube {
 
         // movement
         this.velocity = velocity;
+        this.rotationSpeed = Math.random() * 2 * Math.PI;
+
     }
 
     get matrix() {
         const result = mat4.identity();
         mat4.translate(result, this.translation, result);
-        console.log(this.orientation, this.angle);
         mat4.rotate(result, this.orientation, this.angle, result);
         mat4.scale(result, this.scale, result);
         
