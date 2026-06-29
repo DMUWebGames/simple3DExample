@@ -40,20 +40,12 @@ fn vsMain(
 
     var output: VertexOutput;
     let cube = cubes[instanceIndex];
-
     let worldPos = cube.modelMatrix * vec4<f32>(input.position, 1.0);
-
-    output.position =
-        camera.projMatrix *
-        camera.viewMatrix *
-        worldPos;
+    output.position = camera.projMatrix * camera.viewMatrix * worldPos;
 
     // transform normal (ignore translation)
-    output.normal =
-        normalize((cube.modelMatrix * vec4<f32>(input.normal, 0.0)).xyz);
-
+    output.normal = normalize((cube.modelMatrix * vec4<f32>(input.normal, 0.0)).xyz);
     output.worldPos = worldPos.xyz;
-
     return output;
 }
 
@@ -71,13 +63,13 @@ fn fsMain(input: VertexOutput) -> @location(0) vec4<f32> {
     let R = reflect(-L, N);
 
     // Phong components
-    let ambient = 0.1;
+    let ambient = 0.3;
 
     let diffuse = max(dot(N, L), 0.0);
 
     let specular = pow(max(dot(R, V), 0.0), 32.0);
 
-    let baseColor = vec3<f32>(1.0, 1, 1);
+    let baseColor = vec3<f32>(1, 1, 1);
 
     let color =
         baseColor * ambient +

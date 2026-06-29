@@ -9,7 +9,7 @@ struct VertexOutput {
     @location(0) uv: vec2<f32>
 };
 
-struct Thing {
+struct Asteroid {
     modelMatrix: mat4x4<f32>
 };
 
@@ -18,7 +18,7 @@ struct Camera {
     projMatrix: mat4x4<f32>
 }
 
-@group(0) @binding(0) var<storage> things: array<Thing>;
+@group(0) @binding(0) var<storage> asteroids: array<Asteroid>;
 @group(0) @binding(1) var<uniform> camera: Camera;
 
 @group(0) @binding(2) var mySampler: sampler;
@@ -27,8 +27,8 @@ struct Camera {
 @vertex
 fn vsMain(@builtin(instance_index) instanceIndex: u32, input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
-    let thing = things[instanceIndex];
-    output.position = camera.projMatrix * camera.viewMatrix * thing.modelMatrix * vec4<f32>(input.position, 1);
+    let asteroid = asteroids[instanceIndex];
+    output.position = camera.projMatrix * camera.viewMatrix * asteroid.modelMatrix * vec4<f32>(input.position, 1);
     output.uv = input.uv;//vec4(1-input.position.x, 1, 1, 1);
     return output;
 }
