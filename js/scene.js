@@ -80,10 +80,11 @@ export default class Scene {
                 entryPoint: "vsMain",
                 buffers: [
                     {
-                        arrayStride: 20, // x, y, z, u, v = 5 * 4 bytes (vec3<f32>)
+                        arrayStride: 32, // x, y, z, u, v, nx, ny, nz = 8 * 4 bytes
                         attributes: [
                             { shaderLocation: 0, offset: 0, format: "float32x3" }, // x, y, z
                             { shaderLocation: 1, offset: 12, format: "float32x2" }, // u, v
+                            { shaderLocation: 2, offset: 20, format: "float32x3" }, // nx, ny, nz
                         ]
                     }
                 ]
@@ -147,8 +148,9 @@ export default class Scene {
             entries: [
                 { binding: 0, resource: { buffer: this.asteroidBuffer } },
                 { binding: 1, resource: { buffer: this.cameraBuffer } },
-                { binding: 2, resource: sampler },
-                { binding: 3, resource: texture, }
+                { binding: 2, resource: { buffer: this.light.buffer(device) } },
+                { binding: 3, resource: sampler },
+                { binding: 4, resource: texture, }
             ]
         });
 
@@ -285,6 +287,10 @@ export default class Scene {
         }
 
         this.camera.update(elapsed);
+        
+        this.cubes.forEach(cube => {
+            cube.update(elapsed);
+        })
 
         this.asteroids.forEach(asteroid => {
             asteroid.update(elapsed);
@@ -295,6 +301,7 @@ export default class Scene {
         speedometer.value = this.camera.speed;
 
         device.queue.writeBuffer(this.asteroidBuffer, 0, this.asteroidTransforms);
+        device.queue.writeBuffer(this.cubeBuffer, 0, this.cubeTransforms);
         device.queue.writeBuffer(this.cameraBuffer, 0, this.camera.data);
     }
 

@@ -6,7 +6,11 @@ function createVertex(theta, phi, r) {
     const z = Math.cos(theta) * r;
     const u = phi / (2 * Math.PI);
     const v = theta / Math.PI;
-    return [x, y, z, u, v];
+    // For a sphere, normal is the normalized position
+    const nx = Math.sin(theta) * Math.cos(phi);
+    const ny = Math.sin(theta) * Math.sin(phi);
+    const nz = Math.cos(theta);
+    return [x, y, z, u, v, nx, ny, nz];
 }
 
 export function sphericalVertices(segmentCount, size) {
@@ -41,5 +45,5 @@ export function sphericalVertexBuffer(device, segments, size) {
     const vertexBuffer = mappedBuffer(device, vertices, {
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,        
     });
-    return [vertexBuffer, vertices.length / 5];
+    return [vertexBuffer, vertices.length / 8];
 }
