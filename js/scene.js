@@ -165,8 +165,15 @@ export default class Scene {
 
 
         // handle canvas resizing
+
         window.addEventListener("resize", this.resize.bind(this));
         window.dispatchEvent(new Event("resize"));
+// const resizeObserver = new ResizeObserver((entries) => {
+//     for (const entry of entries) {
+//         scene.resize(entry);
+//     }
+// });
+// resizeObserver.observe(document.body);
 
 
         // handling user interaction
@@ -203,7 +210,6 @@ export default class Scene {
     }
 
     resize() {
-        console.log("resizing canvas");
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
         this.camera.resize(canvas);

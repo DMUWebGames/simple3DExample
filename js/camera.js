@@ -12,6 +12,7 @@ export default class Camera {
         this.maxSpeed = radius / 10;
         this.thrustAcceleration = radius * 0.005;
         this.mouseSensitivity = 0.001;
+        this.rollAcceleration = 10;
         this.rollSpeed = 1.75;
         this.drag = 0;
         this.resize(canvas);

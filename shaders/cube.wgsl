@@ -63,7 +63,7 @@ fn fsMain(input: VertexOutput) -> @location(0) vec4<f32> {
     let R = reflect(-L, N);
 
     // Phong components
-    let ambient = 0.3;
+    let ambient = 0.1;
 
     let diffuse = max(dot(N, L), 0.0);
 
