@@ -40,12 +40,10 @@ export class CameraSystem extends System {
     }
 
     update(world, deltaTime, activeEntities) {
-        const query = world.query(['Camera']);
-        const matchingEntities = query.filter(activeEntities, world.signatures);
-
-        for (const entityId of matchingEntities) {
-            this._updateCamera(world, entityId);
-        }
+        const cameraId = world.getResource("activeCameraEntity");
+        this._updateCamera(world, cameraId);
+        const activeCameraBuffer = this.getCameraBuffer(world, cameraId);
+        world.registerResource("activeCameraBuffer", activeCameraBuffer);
     }
 
     updateAspect(world, entityId, width, height) {
@@ -59,6 +57,8 @@ export class CameraSystem extends System {
     }
 
     _updateCamera(world, entityId) {
+        console.log("update camera");
+        
         const cameraPool = world.pools.Camera;
         const positionPool = world.pools.Position;
 
@@ -72,9 +72,7 @@ export class CameraSystem extends System {
         const far = cameraData[2] ?? 1000;
         const fov = cameraData[3] ?? 60;
 
-        const position = positionPool?.has(entityId)
-            ? positionPool.getRaw(entityId)
-            : new Float32Array([0, 0, 0]);
+        const position = positionPool?.has(entityId) ? positionPool.getRaw(entityId) : new Float32Array([0, 0, 0]);
 
         const cameraPosition = vec3.create(position[0] ?? 0, position[1] ?? 0, position[2] ?? 0);
         const target = vec3.add(cameraPosition, vec3.create(0, 0, -1), vec3.create());

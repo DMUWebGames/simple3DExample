@@ -209,7 +209,6 @@ class Query {
     }
 }
 
-
 // ============================================================================
 // ENTITY FRAMEWORK (Main API)
 // ============================================================================
@@ -225,6 +224,7 @@ export class EntityFramework {
         this.signatures = new SignatureManager(this.maxEntities);
         this.pools = {};
         this.systems = [];
+        this.resources = new Map();
 
         // Register components from config
         if (config.components) {
@@ -246,6 +246,23 @@ export class EntityFramework {
         this.pools[name] = new TypedComponentPool(this.maxEntities, 
             this.componentRegistry.get(name));
         return bit;
+    }
+
+    registerResource(name, resource) {
+        this.resources.set(name, resource);
+        return resource;
+    }
+
+    getResource(name) {
+        return this.resources.get(name) ?? null;
+    }
+
+    hasResource(name) {
+        return this.resources.has(name);
+    }
+
+    removeResource(name) {
+        this.resources.delete(name);
     }
 
     createEntity() {

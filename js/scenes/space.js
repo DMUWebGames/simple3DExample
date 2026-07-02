@@ -2,7 +2,7 @@ import { EntityFramework } from "../ECS/Framework.js";
 import { MovementSystem } from "../ECS/systems/movement.js";
 import { RotationSystem } from "../ECS/systems/rotation.js";
 import { CameraSystem } from "../ECS/systems/camera.js";
-import { RenderSystem } from "../ECS/systems/RenderSystem.js";
+import { Renderer } from "../ECS/systems/renderer.js";
 import { canvas, device } from "../setup.js";
 
 export class SpaceScene { 
@@ -50,7 +50,7 @@ export class SpaceScene {
 
         // setup rendering
         // this.cameraSystem.ensureCameraBuffer(this.framework, this.camera);
-        this.renderSystem = new RenderSystem(this);
+        this.renderSystem = new Renderer(this);
         this.framework.addSystem(this.renderSystem);
         // this.renderSystem.setCameraEntity(this.camera);
     }
