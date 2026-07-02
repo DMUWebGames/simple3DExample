@@ -88,8 +88,10 @@ class TypedComponentPool {
     }
 
     getRaw(entityId) {
-        return this.data.subarray(entityId * this.elementsPerEntity, 
-                                   (entityId + 1) * this.elementsPerEntity);
+        return this.data.subarray(
+            entityId * this.elementsPerEntity,
+            (entityId + 1) * this.elementsPerEntity
+        );
     }
 
     has(entityId) {
@@ -207,27 +209,6 @@ class Query {
     }
 }
 
-// ============================================================================
-// SYSTEM BASE CLASS
-// ============================================================================
-
-export class System {
-    constructor(requiredComponents = {}) {
-        this.requiredComponents = requiredComponents;
-        this.requiredMask = 0;
-        this.componentNames = Object.keys(requiredComponents);
-    }
-
-    // Override in subclass
-    update(world, deltaTime) {
-        throw new Error('System.update() must be implemented');
-    }
-
-    // Helper to get component data
-    getComponent(world, entityId, componentName) {
-        return world.pools[componentName]?.getRaw(entityId);
-    }
-}
 
 // ============================================================================
 // ENTITY FRAMEWORK (Main API)
@@ -388,67 +369,3 @@ export class EntityFramework {
     }
 }
 
-// ============================================================================
-// EXAMPLE SYSTEMS
-// ============================================================================
-
-export class MovementSystem extends System {
-    constructor() {
-        super({ Position: null, Velocity: null });
-    }
-
-    update(world, deltaTime, activeEntities) {
-        const query = world.query(['Position', 'Velocity']);
-        const matchingEntities = query.filter(activeEntities, world.signatures);
-
-        const positions = world.pools.Position.data;
-        const velocities = world.pools.Velocity.data;
-
-        for (const entityId of matchingEntities) {
-            const posOffset = entityId * 3;
-            const velOffset = entityId * 3;
-
-            positions[posOffset] += velocities[velOffset] * deltaTime;
-            positions[posOffset + 1] += velocities[velOffset + 1] * deltaTime;
-            positions[posOffset + 2] += velocities[velOffset + 2] * deltaTime;
-        }
-    }
-}
-
-export class RotationSystem extends System {
-    constructor() {
-        super({ Rotation: null, RotationSpeed: null });
-    }
-
-    update(world, deltaTime, activeEntities) {
-        const query = world.query(['Rotation', 'RotationSpeed']);
-        const matchingEntities = query.filter(activeEntities, world.signatures);
-
-        const rotations = world.pools.Rotation.data;
-        const speeds = world.pools.RotationSpeed.data;
-
-        for (const entityId of matchingEntities) {
-            rotations[entityId] += speeds[entityId] * deltaTime;
-        }
-    }
-}
-
-export class LifetimeSystem extends System {
-    constructor() {
-        super({ Lifetime: null });
-    }
-
-    update(world, deltaTime, activeEntities) {
-        const query = world.query(['Lifetime']);
-        const matchingEntities = query.filter(activeEntities, world.signatures);
-
-        const lifetimes = world.pools.Lifetime.data;
-
-        for (const entityId of matchingEntities) {
-            lifetimes[entityId] -= deltaTime;
-            if (lifetimes[entityId] <= 0) {
-                world.destroyEntity(entityId);
-            }
-        }
-    }
-}

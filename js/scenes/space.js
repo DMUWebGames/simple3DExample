@@ -1,6 +1,9 @@
-import { EntityFramework, MovementSystem, RotationSystem } from "../ECS/Framework.js";
-import { RenderSystem } from "../RenderSystem.js";
-import { device } from "../setup.js";
+import { EntityFramework } from "../ECS/Framework.js";
+import { MovementSystem } from "../ECS/systems/movement.js";
+import { RotationSystem } from "../ECS/systems/rotation.js";
+import { CameraSystem } from "../ECS/systems/camera.js";
+import { RenderSystem } from "../ECS/systems/RenderSystem.js";
+import { canvas, device } from "../setup.js";
 
 export class SpaceScene { 
     constructor() { 
@@ -38,28 +41,30 @@ export class SpaceScene {
             far: 1000,
             fov: 60
         });
-        // new Camera(canvas, this.radius);
-        
 
         // setup movement and rotation
         this.framework.addSystem(new MovementSystem);
+        this.cameraSystem = new CameraSystem();
+        this.framework.addSystem(this.cameraSystem);
         // this.framework.addSystem(new RotationSystem);
 
         // setup rendering
-        this.renderSystem = new RenderSystem(this)
+        // this.cameraSystem.ensureCameraBuffer(this.framework, this.camera);
+        this.renderSystem = new RenderSystem(this);
         this.framework.addSystem(this.renderSystem);
+        // this.renderSystem.setCameraEntity(this.camera);
     }
 
     resize(ev) {
-        console.log("resize space");
-        this.renderSystem.resize(ev)
+        this.renderSystem.resize(ev);
+        this.cameraSystem.updateAspect(this.framework, this.camera, canvas.width, canvas.height);
     }
 
     animate(ts) { 
         const deltaTime = ts - this.prev || 0;
         this.prev = ts;
         this.framework.update(deltaTime);
-        // console.log(this.framework.getStats());
+        console.log(this.framework.getStats());
         
         requestAnimationFrame(this.animate.bind(this));
     }
