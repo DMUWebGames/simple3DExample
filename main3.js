@@ -15,7 +15,7 @@ class TestScene {
                     aspect: 16 / 9,
                     near: 0.1,
                     far: 1000,
-                    fov: 60
+                    fov: 90
                 }
             }
         });
