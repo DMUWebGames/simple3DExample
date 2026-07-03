@@ -11,6 +11,10 @@ export class System {
         throw new Error('System.update() must be implemented');
     }
 
+    resize(canvas) {
+        throw new Error('System.update() must be implemented');
+    }
+
     // Helper to get component data
     getComponent(world, entityId, componentName) {
         return world.pools[componentName]?.getRaw(entityId);

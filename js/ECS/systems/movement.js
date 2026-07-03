@@ -21,4 +21,6 @@ export class MovementSystem extends System {
             positions[posOffset + 2] += velocities[velOffset + 2] * deltaTime;
         }
     }
+
+    resize() { }
 }

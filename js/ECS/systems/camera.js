@@ -46,6 +46,11 @@ export class CameraSystem extends System {
         world.registerResource("activeCameraBuffer", activeCameraBuffer);
     }
 
+    resize(world, canvas) {
+        const cameraId = world.getResource("activeCameraEntity");
+        this.updateAspect(world, cameraId, canvas.width, canvas.height);
+    }
+
     updateAspect(world, entityId, width, height) {
         if (!world?.pools?.Camera?.has(entityId)) {
             return;

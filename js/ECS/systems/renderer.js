@@ -94,12 +94,10 @@ export class Renderer extends System {
             console.log("no camera buffer found");
             return;
         }
-        const meshNames = world.getResource("meshNames");
 
-        // Create a group of entities per mesh
+        // Create a group of entities per mesh (renderable[0] is the mesh resourceId)
         const groups = Map.groupBy(renderableEntities, (entityId) => {
-            const renderable = world.getComponent(entityId, "Renderable");
-            return meshNames[renderable[0]];
+            return world.getComponent(entityId, "Renderable")[0];
         });
 
         if (!groups.size) {
@@ -123,8 +121,7 @@ export class Renderer extends System {
         
         renderPass.setPipeline(this.pipeline);
         
-
-        for (const [meshName, group] of groups) {
+        for (const [meshId, group] of groups) {
             const transforms = new Float32Array(group.length * 16);
             for (let i = 0; i < group.length; i++) {
                 const entityId = group[i];
@@ -134,7 +131,7 @@ export class Renderer extends System {
                 transforms.set(modelMatrix, i * 16);
             }
 
-            let instanceBuffer = this.instanceBuffers.get(meshName);
+            let instanceBuffer = this.instanceBuffers.get(meshId);
 
             // buffer expands as necessary if length increases
             if (!instanceBuffer || instanceBuffer.size < transforms.byteLength) {
@@ -143,7 +140,7 @@ export class Renderer extends System {
                     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
                 });
                 // so we can reuse buffers
-                this.instanceBuffers.set(meshName, instanceBuffer);
+                this.instanceBuffers.set(meshId, instanceBuffer);
             }
             device.queue.writeBuffer(instanceBuffer, 0, transforms);
 
@@ -153,7 +150,7 @@ export class Renderer extends System {
                 cameraBuffer
             );
 
-            const mesh = world.getResource(meshName);
+            const mesh = world.getResourceById(meshId);
 
             renderPass.setBindGroup(0, bindGroup);
             renderPass.setVertexBuffer(0, mesh.vertexBuffer);

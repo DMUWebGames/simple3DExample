@@ -224,7 +224,7 @@ export class EntityFramework {
         this.signatures = new SignatureManager(this.maxEntities);
         this.pools = {};
         this.systems = [];
-        this.resources = new Map();
+        this.resources = new ResourceRegistry();
 
         // Register components from config
         if (config.components) {
@@ -249,13 +249,17 @@ export class EntityFramework {
     }
 
     registerResource(name, resource) {
-        this.resources.set(name, resource);
-        return resource;
+        return this.resources.set(name, resource);
     }
 
     getResource(name) {
         return this.resources.get(name) ?? null;
     }
+
+    getResourceById(id) {
+        return this.resources.getByIndex(id) ?? null;
+    }
+
 
     hasResource(name) {
         return this.resources.has(name);
@@ -386,3 +390,30 @@ export class EntityFramework {
     }
 }
 
+class ResourceRegistry {
+    constructor() {
+        this.names = [];
+        this.map = new Map();
+    }
+
+    set(name, value) {
+        if (!this.names.includes(name)) {
+            this.names.push(name);
+        }
+        const id = this.names.indexOf(name);
+        this.map.set(name, value);
+        return id;
+    }
+
+    get(name) {
+        return this.map.get(name);
+    }
+
+    getByIndex(id) {
+        return this.get(this.names[id]);
+    }
+
+    indexOf(name) {
+        return this.names.indexOf(name);
+    }
+}
