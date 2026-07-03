@@ -96,25 +96,12 @@ export class Renderer extends System {
         }
         const meshNames = world.getResource("meshNames");
 
-    
-        const groups = new Map();
-        for (const entityId of renderableEntities) {
+        // Create a group of entities per mesh
+        const groups = Map.groupBy(renderableEntities, (entityId) => {
             const renderable = world.getComponent(entityId, "Renderable");
-            
-            const meshIndex = renderable[0];
-            const meshName = meshNames[meshIndex];
-            const mesh =  world.getResource(meshName);
-            
-            if (!mesh?.vertexBuffer) {
-                continue;
-            }
-            
-            if (!groups.has(meshName)) {
-                groups.set(meshName, { mesh, entities: [] });
-            }
-            groups.get(meshName).entities.push(entityId);
-        }
-        
+            return meshNames[renderable[0]];
+        });
+
         if (!groups.size) {
             return;
         }
@@ -138,9 +125,9 @@ export class Renderer extends System {
         
 
         for (const [meshName, group] of groups) {
-            const transforms = new Float32Array(group.entities.length * 16);
-            for (let i = 0; i < group.entities.length; i++) {
-                const entityId = group.entities[i];
+            const transforms = new Float32Array(group.length * 16);
+            for (let i = 0; i < group.length; i++) {
+                const entityId = group[i];
                 const position = world.getComponent(entityId, "Position");
                 const modelMatrix = mat4.identity();
                 mat4.translate(modelMatrix, [position?.[0] ?? 0, position?.[1] ?? 0, position?.[2] ?? 0], modelMatrix);
@@ -148,11 +135,14 @@ export class Renderer extends System {
             }
 
             let instanceBuffer = this.instanceBuffers.get(meshName);
+
+            // buffer expands as necessary if length increases
             if (!instanceBuffer || instanceBuffer.size < transforms.byteLength) {
                 instanceBuffer = device.createBuffer({
                     size: transforms.byteLength,
                     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
                 });
+                // so we can reuse buffers
                 this.instanceBuffers.set(meshName, instanceBuffer);
             }
             device.queue.writeBuffer(instanceBuffer, 0, transforms);
@@ -163,9 +153,11 @@ export class Renderer extends System {
                 cameraBuffer
             );
 
+            const mesh = world.getResource(meshName);
+
             renderPass.setBindGroup(0, bindGroup);
-            renderPass.setVertexBuffer(0, group.mesh.vertexBuffer);
-            renderPass.draw(group.mesh.vertexCount, group.entities.length, 0, 0);
+            renderPass.setVertexBuffer(0, mesh.vertexBuffer);
+            renderPass.draw(mesh.vertexCount, group.length, 0, 0);
         }
 
         renderPass.end();
