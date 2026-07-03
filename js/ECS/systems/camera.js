@@ -1,5 +1,5 @@
-import { System } from "./base.js";
 import { mat4, vec3 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
+import { System } from "./base.js";
 import { device } from "../../setup.js";
 
 const CAMERA_BUFFER_SIZE = 2 * 16 * 4 + 16;
@@ -57,7 +57,7 @@ export class CameraSystem extends System {
     }
 
     _updateCamera(world, entityId) {
-        console.log("update camera");
+        // console.log("update camera");
         
         const cameraPool = world.pools.Camera;
         const positionPool = world.pools.Position;

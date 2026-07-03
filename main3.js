@@ -3,13 +3,15 @@ import { CameraSystem } from "./js/ECS/systems/camera.js";
 import { Renderer } from "./js/ECS/systems/renderer.js";
 import { canvas, device } from "./js/setup.js";
 import { cubeVertexBuffer } from "./js/cube.js";
+import { MovementSystem } from "./js/ECS/systems/movement.js";
 
 class TestScene {
-    constructor() {
+    constructor(nCubes) {
         this.framework = new EntityFramework({
-            maxEntities: 32,
+            maxEntities: nCubes + 1,
             components: {
                 Position: { x: 0, y: 0, z: 0 },
+                Velocity: { x: 0, y: 0, z: 0 },
                 Renderable: { mesh: "" },
                 Camera: {
                     aspect: 16 / 9,
@@ -30,14 +32,13 @@ class TestScene {
             vertexCount: cubeVertexCount
         });
 
-        this.myEntity = this.framework.createEntity();
-        this.framework.addComponent(this.myEntity, "Position", { x: 0, y: 0, z: -3 });
-        this.framework.addComponent(this.myEntity, "Renderable", meshNames.indexOf("cube"));
 
-        this.myEntity2 = this.framework.createEntity();
-        this.framework.addComponent(this.myEntity2, "Position", { x: 0, y: 2, z: -5 });
-        this.framework.addComponent(this.myEntity2, "Renderable", meshNames.indexOf("cube"));
-
+        new Array(nCubes).fill(0).forEach((_, i) => { 
+            const id = this.framework.createEntity();
+            this.framework.addComponent(id, "Position", { x: Math.random() - 0.5, y: Math.random() - 0.5, z: -30 });
+            this.framework.addComponent(id, "Velocity", { x: (Math.random() - 0.5) * 0.01, y: (Math.random() - 0.5) * 0.01, z: 0.001 });
+            this.framework.addComponent(id, "Renderable", meshNames.indexOf("cube"));
+        })
 
         this.cameraEntity = this.framework.createEntity();
         this.framework.addComponent(this.cameraEntity, "Position", { x: 0, y: 0, z: 0 });
@@ -55,6 +56,10 @@ class TestScene {
 
         this.renderSystem = new Renderer();
         this.framework.addSystem(this.renderSystem);
+
+        this.movementSystem = new MovementSystem();
+        this.framework.addSystem(this.movementSystem);
+
     }
 
     resize() {
@@ -70,7 +75,7 @@ class TestScene {
     }
 }
 
-const scene = new TestScene();
+const scene = new TestScene(500);
 window.scene = scene;
 window.addEventListener("resize", () => scene.resize());
 scene.resize();

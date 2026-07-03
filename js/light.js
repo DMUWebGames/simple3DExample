@@ -1,5 +1,5 @@
 export class Light {
-    constructor(dir=[0.5, -1.0, 0.3, 0], colour=[1, 1, 1, 0]) {
+    constructor(dir=[0.5, -1.0, -1.0, 0], colour=[1, 1, 1, 0]) {
         this.dir = dir;
         this.colour = colour;
     }

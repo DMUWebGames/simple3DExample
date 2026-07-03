@@ -19,8 +19,6 @@ export class Renderer extends System {
         this.pipeline = this.createPipeline();
         this.depthTexture = null;
         this.cameraEntity = null;
-        this.resize();
-
     }
 
     createPipeline() {
@@ -98,6 +96,7 @@ export class Renderer extends System {
         }
         const meshNames = world.getResource("meshNames");
 
+    
         const groups = new Map();
         for (const entityId of renderableEntities) {
             const renderable = world.getComponent(entityId, "Renderable");
@@ -136,8 +135,7 @@ export class Renderer extends System {
         });
         
         renderPass.setPipeline(this.pipeline);
-        // console.log("!!");
-        // exit()
+        
 
         for (const [meshName, group] of groups) {
             const transforms = new Float32Array(group.entities.length * 16);
