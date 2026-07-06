@@ -50,7 +50,7 @@ export class TestScene {
         })
 
         // Asteroids
-        const [asteroidBuffer, asteroidVertexCount] = sphericalVertexBuffer(device, 20, 1, true);
+        const [asteroidBuffer, asteroidVertexCount] = sphericalVertexBuffer(device, 20, 1);
         const asteroidMeshId = this.framework.registerResource("asteroidMesh", {
             vertexBuffer: asteroidBuffer,
             vertexCount: asteroidVertexCount

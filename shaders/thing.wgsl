@@ -62,7 +62,6 @@ fn fsMain(input: VertexOutput) -> @location(0) vec4<f32> {
     let ambient = 0.1;
     let diffuse = max(dot(N, L), 0.0);
     let specular = pow(max(dot(R, V), 0.0), 16.0);
-    
     let lighting = ambient + diffuse + specular * 0.5;
     
     return textureColor * vec4<f32>(lighting, lighting, lighting, 1.0);

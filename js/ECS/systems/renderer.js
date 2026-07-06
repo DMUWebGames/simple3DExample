@@ -2,6 +2,7 @@ import { System } from "./base.js";
 import { device, format, ctx, canvas } from "../../setup.js";
 import { Light } from "../../light.js";
 import { mat4 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
+import { loadTexture } from "../../texture.js";
 
 async function createShader(path) {
     const response = await fetch(path);
@@ -9,7 +10,11 @@ async function createShader(path) {
     return device.createShaderModule({ code, label: path });
 }
 
-const cubeModule = await createShader("shaders/cube.wgsl");
+const thingModule = await createShader("shaders/thing.wgsl");
+const texture = await loadTexture('textures/asteroid.jpg');
+const sampler = device.createSampler();
+
+
 
 export class Renderer extends System {
     constructor() {
@@ -23,20 +28,21 @@ export class Renderer extends System {
         return device.createRenderPipeline({
             layout: "auto",
             vertex: {
-                module: cubeModule,
+                module: thingModule,
                 entryPoint: "vsMain",
                 buffers: [
                     {
-                        arrayStride: 24,
+                        arrayStride: 32,
                         attributes: [
                             { shaderLocation: 0, offset: 0, format: "float32x3" },
-                            { shaderLocation: 1, offset: 12, format: "float32x3" },
+                            { shaderLocation: 1, offset: 12, format: "float32x2" },
+                            { shaderLocation: 2, offset: 20, format: "float32x3" },
                         ]
                     }
                 ]
             },
             fragment: {
-                module: cubeModule,
+                module: thingModule,
                 entryPoint: "fsMain",
                 targets: [{ format }]
             },
@@ -60,6 +66,8 @@ export class Renderer extends System {
                 { binding: 0, resource: { buffer: instanceBuffer } },
                 { binding: 1, resource: { buffer: cameraBuffer } },
                 { binding: 2, resource: { buffer: lightBuffer } },
+                { binding: 3, resource: sampler },
+                { binding: 4, resource: texture }
             ]
         });
     }
