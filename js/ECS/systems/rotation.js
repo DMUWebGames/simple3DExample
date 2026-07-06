@@ -16,4 +16,6 @@ export class RotationSystem extends System {
             rotations[entityId] += speeds[entityId] * deltaTime;
         }
     }
+
+    resize() { }
 }

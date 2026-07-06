@@ -12,7 +12,7 @@ export class System {
     }
 
     resize(canvas) {
-        throw new Error('System.update() must be implemented');
+        throw new Error('System.resize() must be implemented');
     }
 
     // Helper to get component data

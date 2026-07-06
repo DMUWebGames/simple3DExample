@@ -5,6 +5,7 @@ import { canvas, device } from "./js/setup.js";
 import { cubeVertexBuffer } from "./js/cube.js";
 import { MovementSystem } from "./js/ECS/systems/movement.js";
 import { sphericalVertexBuffer } from "./js/sphere.js";
+import { RotationSystem } from "./js/ECS/systems/rotation.js";
 
 const randomVector = (min, max) => {
     return {
@@ -21,6 +22,8 @@ class TestScene {
             components: {
                 Position: { x: 0, y: 0, z: 0 },
                 Velocity: { x: 0, y: 0, z: 0 },
+                Rotation: { x: 0, y: 0, z: 0 },
+                RotationSpeed: 0,
                 Renderable: { mesh: "" },
                 Camera: {
                     aspect: 16 / 9,
@@ -42,6 +45,8 @@ class TestScene {
             const id = this.framework.createEntity();
             this.framework.addComponent(id, "Position", randomVector(0, 20));
             this.framework.addComponent(id, "Velocity", randomVector(0, 0.001));
+            this.framework.addComponent(id, "Rotation", randomVector(0, 0.001));
+            this.framework.addComponent(id, "RotationSpeed", Math.random());
             this.framework.addComponent(id, "Renderable", cubeMeshId);
         })
 
@@ -56,6 +61,7 @@ class TestScene {
             const id = this.framework.createEntity();
             this.framework.addComponent(id, "Position", randomVector(0, 20));
             this.framework.addComponent(id, "Velocity", randomVector(0, 0.001));
+            this.framework.addComponent(id, "Rotation", randomVector(0, 0.001));
             this.framework.addComponent(id, "Renderable", asteroidMeshId);
         })
 
@@ -76,6 +82,7 @@ class TestScene {
         this.framework.addSystem(new CameraSystem());
         this.framework.addSystem(new Renderer());
         this.framework.addSystem(new MovementSystem());
+        this.framework.addSystem(new RotationSystem());
 
     }
 
