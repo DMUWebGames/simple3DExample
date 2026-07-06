@@ -27,10 +27,6 @@ export class CameraSystem extends System {
         return this.cameraBuffers.get(entityId);
     }
 
-    getCameraBuffer(world, entityId) {
-        return this.ensureCameraBuffer(world, entityId);
-    }
-
     getCameraData(world, entityId) {
         if (!world?.pools?.Camera?.has(entityId)) {
             return null;
@@ -42,54 +38,54 @@ export class CameraSystem extends System {
     update(world, deltaTime, activeEntities) {
         const cameraId = world.getResource("activeCameraEntity");
         this._updateCamera(world, cameraId);
-        const activeCameraBuffer = this.getCameraBuffer(world, cameraId);
-        world.registerResource("activeCameraBuffer", activeCameraBuffer);
+
+        // create buffer as necessary
+        if (!this.cameraBuffers.has(cameraId)) {
+            this.cameraBuffers.set(cameraId, device.createBuffer({
+                label: `camera uniform buffer ${cameraId}`,
+                size: CAMERA_BUFFER_SIZE,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+            }));
+        }
+
+        // register the camera buffer for use in the render pass
+        world.registerResource("activeCameraBuffer", this.cameraBuffers.get(cameraId));
     }
 
     resize(world, canvas) {
+        // TODO: loop over all existing cameras rather than just the live one?
         const cameraId = world.getResource("activeCameraEntity");
-        this.updateAspect(world, cameraId, canvas.width, canvas.height);
-    }
-
-    updateAspect(world, entityId, width, height) {
-        if (!world?.pools?.Camera?.has(entityId)) {
-            return;
-        }
-
-        const cameraData = world.pools.Camera.getRaw(entityId);
-        cameraData[0] = width / Math.max(height, 1);
-        this._updateCamera(world, entityId);
+        const cameraData = world.pools.Camera.getRaw(cameraId);
+        cameraData[0] = canvas.width / Math.max(canvas.height, 1);
     }
 
     _updateCamera(world, entityId) {
         // console.log("update camera");
         
-        const cameraPool = world.pools.Camera;
+        // Make sure we have the data we need
         const positionPool = world.pools.Position;
-
-        if (!cameraPool?.has(entityId)) {
+        const cameraPool = world.pools.Camera;
+        if (!cameraPool?.has(entityId) || !positionPool.has(entityId)) {
             return;
         }
 
-        const cameraData = cameraPool.getRaw(entityId);
-        const aspect = cameraData[0] ?? 16 / 9;
-        const near = cameraData[1] ?? 0.1;
-        const far = cameraData[2] ?? 1000;
-        const fov = cameraData[3] ?? 60;
+        // get the data
+        const position = vec3.create(...positionPool.getRaw(entityId));
+        const [aspect, near, far, fov] = cameraPool.getRaw(entityId);
 
-        const position = positionPool?.has(entityId) ? positionPool.getRaw(entityId) : new Float32Array([0, 0, 0]);
+        // TODO: orientation should be data taken from the orientation pool?
+        const orientation = vec3.create(0, 0, -1);
 
-        const cameraPosition = vec3.create(position[0] ?? 0, position[1] ?? 0, position[2] ?? 0);
-        const target = vec3.add(cameraPosition, vec3.create(0, 0, -1), vec3.create());
+        const target = vec3.add(position, orientation, vec3.create());
         const up = vec3.create(0, 1, 0);
 
-        const viewMatrix = mat4.lookAt(cameraPosition, target, up);
+        const viewMatrix = mat4.lookAt(position, target, up);
         const projectionMatrix = mat4.perspective((fov * Math.PI) / 180, aspect, near, far);
 
         const uniformData = new Float32Array(36);
         uniformData.set(viewMatrix, 0);
         uniformData.set(projectionMatrix, 16);
-        uniformData.set([cameraPosition[0], cameraPosition[1], cameraPosition[2], 0], 32);
+        uniformData.set([position[0], position[1], position[2], 0], 32);
 
         this.cameraData.set(entityId, uniformData);
 
