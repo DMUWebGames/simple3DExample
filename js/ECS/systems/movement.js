@@ -22,5 +22,4 @@ export class MovementSystem extends System {
         }
     }
 
-    resize() { }
 }

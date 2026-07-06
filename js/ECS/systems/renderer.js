@@ -14,11 +14,9 @@ const cubeModule = await createShader("shaders/cube.wgsl");
 export class Renderer extends System {
     constructor() {
         super({ Position: { x: 0, y: 0, z: 0 }, Renderable: { mesh: "" } });
-        this.light = new Light();
         this.instanceBuffers = new Map();
         this.pipeline = this.createPipeline();
         this.depthTexture = null;
-        this.cameraEntity = null;
     }
 
     createPipeline() {
@@ -55,13 +53,13 @@ export class Renderer extends System {
         });
     }
 
-    createBindGroup(layout, instanceBuffer, cameraBuffer) {
+    createBindGroup(layout, instanceBuffer, cameraBuffer, lightBuffer) {
         return device.createBindGroup({
             layout,
             entries: [
                 { binding: 0, resource: { buffer: instanceBuffer } },
                 { binding: 1, resource: { buffer: cameraBuffer } },
-                { binding: 2, resource: { buffer: this.light.buffer(device) } },
+                { binding: 2, resource: { buffer: lightBuffer } },
             ]
         });
     }
@@ -78,8 +76,6 @@ export class Renderer extends System {
     }
 
     update(world, deltaTime, activeEntities) {
-        // console.log("render!");
-        
 
         const renderableQuery = world.query(['Position', 'Renderable']);
         const renderableEntities = renderableQuery.filter(activeEntities, world.signatures);
@@ -94,6 +90,13 @@ export class Renderer extends System {
             console.log("no camera buffer found");
             return;
         }
+
+        const lightBuffer = world.getResource("activeLightBuffer");
+        if (!lightBuffer) {
+            console.log("no light buffer found");
+            return;
+        }
+
 
         // Create a group of entities per mesh (renderable[0] is the mesh resourceId)
         const groups = Map.groupBy(renderableEntities, (entityId) => {
@@ -147,7 +150,8 @@ export class Renderer extends System {
             const bindGroup = this.createBindGroup(
                 this.pipeline.getBindGroupLayout(0),
                 instanceBuffer,
-                cameraBuffer
+                cameraBuffer,
+                lightBuffer
             );
 
             const mesh = world.getResourceById(meshId);

@@ -6,6 +6,7 @@ import { cubeVertexBuffer } from "./js/cube.js";
 import { MovementSystem } from "./js/ECS/systems/movement.js";
 import { sphericalVertexBuffer } from "./js/sphere.js";
 import { RotationSystem } from "./js/ECS/systems/rotation.js";
+import { LightingSystem } from "./js/ECS/systems/lighting.js";
 
 const randomVector = (min, max) => {
     return {
@@ -18,7 +19,7 @@ const randomVector = (min, max) => {
 class TestScene {
     constructor(nCubes, nAsteroids) {
         this.framework = new EntityFramework({
-            maxEntities: nCubes + nAsteroids + 1,
+            maxEntities: nCubes + nAsteroids + 1 + 1,
             components: {
                 Position: { x: 0, y: 0, z: 0 },
                 Velocity: { x: 0, y: 0, z: 0 },
@@ -30,7 +31,9 @@ class TestScene {
                     near: 0.1,
                     far: 100,
                     fov: 90
-                }
+                },
+                Direction: { x: 0.5, y: -1.0, z: 0.3, w: 0 },
+                Colour: { r: 1, g: 1, b: 1, a: 0 }
             }
         });
 
@@ -75,19 +78,29 @@ class TestScene {
             far: 1000,
             fov: 90
         });
-
         this.framework.registerResource("activeCameraEntity", this.cameraEntity);
+
+        // Lights
+        this.lightId = this.framework.createEntity();
+        this.framework.addComponent(this.lightId, "Direction", { x: -0.5, y: -1.0, z: 0.3, w: 0 });
+        this.framework.addComponent(this.lightId, "Colour", { r: 0.8, g: 0.6, b: 0.0, a: 0 });
+        this.framework.registerResource("activeLightEntity", this.lightId);
 
         // Systems
         this.framework.addSystem(new CameraSystem());
-        this.framework.addSystem(new Renderer());
         this.framework.addSystem(new MovementSystem());
         this.framework.addSystem(new RotationSystem());
+        this.framework.addSystem(new LightingSystem());
+        this.framework.addSystem(new Renderer());
 
     }
 
     resize() {
-        this.framework.systems.forEach(system => system.resize(this.framework, canvas));
+        this.framework.systems.forEach(system => {
+            if ("resize" in system) {                
+                system.resize(this.framework, canvas)
+            }
+        });
     }
 
     animate(ts) {

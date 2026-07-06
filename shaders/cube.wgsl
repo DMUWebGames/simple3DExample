@@ -73,7 +73,7 @@ fn fsMain(input: VertexOutput) -> @location(0) vec4<f32> {
 
     let color =
         baseColor * ambient +
-        baseColor * diffuse +
+        light.color * diffuse +
         light.color * specular;
 
     return vec4<f32>(color, 1.0);
