@@ -10,34 +10,11 @@ export class CameraSystem extends System {
         this.cameraBuffers = new Map();
         this.cameraData = new Map();
     }
-
-    ensureCameraBuffer(world, entityId) {
-        if (!world?.pools?.Camera?.has(entityId)) {
-            return null;
-        }
-
-        if (!this.cameraBuffers.has(entityId)) {
-            this.cameraBuffers.set(entityId, device.createBuffer({
-                label: `camera uniform buffer ${entityId}`,
-                size: CAMERA_BUFFER_SIZE,
-                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-            }));
-        }
-
-        return this.cameraBuffers.get(entityId);
-    }
-
-    getCameraData(world, entityId) {
-        if (!world?.pools?.Camera?.has(entityId)) {
-            return null;
-        }
-
-        return this.cameraData.get(entityId) ?? null;
-    }
-
+   
     update(world, deltaTime, activeEntities) {
         const cameraId = world.getResource("activeCameraEntity");
-        this._updateCamera(world, cameraId);
+
+        const uniformData = this.dataForCamera(world, cameraId);
 
         // create buffer as necessary
         if (!this.cameraBuffers.has(cameraId)) {
@@ -47,9 +24,41 @@ export class CameraSystem extends System {
                 usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
             }));
         }
+        const cameraBuffer = this.cameraBuffers.get(cameraId);
+
+        // write the data into the buffer
+        device.queue.writeBuffer(cameraBuffer, 0, uniformData);
 
         // register the camera buffer for use in the render pass
         world.registerResource("activeCameraBuffer", this.cameraBuffers.get(cameraId));
+    }
+
+    dataForCamera(world, cameraId) {
+
+        // Check the data for the camera buffer
+        if (!world.pools.Position?.has(cameraId) || !world.pools.Camera.has(cameraId)) {
+            return;
+        }
+
+        // get the data
+        const position = vec3.create(...world.pools.Position.getRaw(cameraId));
+        const [aspect, near, far, fov] = world.pools.Camera.getRaw(cameraId);
+
+        // TODO: orientation should be data taken from the orientation pool?
+        const orientation = vec3.create(0, 0, -1);
+
+        // calculate the matrices
+        const target = vec3.add(position, orientation, vec3.create());
+        const up = vec3.create(0, 1, 0);
+        const viewMatrix = mat4.lookAt(position, target, up);
+        const projectionMatrix = mat4.perspective((fov * Math.PI) / 180, aspect, near, far);
+
+        // Prepare the data for the buffer
+        const uniformData = new Float32Array(36);
+        uniformData.set(viewMatrix, 0);
+        uniformData.set(projectionMatrix, 16);
+        uniformData.set([position[0], position[1], position[2], 0], 32);
+        return uniformData;
     }
 
     resize(world, canvas) {
@@ -59,39 +68,4 @@ export class CameraSystem extends System {
         cameraData[0] = canvas.width / Math.max(canvas.height, 1);
     }
 
-    _updateCamera(world, entityId) {
-        // console.log("update camera");
-        
-        // Make sure we have the data we need
-        const positionPool = world.pools.Position;
-        const cameraPool = world.pools.Camera;
-        if (!cameraPool?.has(entityId) || !positionPool.has(entityId)) {
-            return;
-        }
-
-        // get the data
-        const position = vec3.create(...positionPool.getRaw(entityId));
-        const [aspect, near, far, fov] = cameraPool.getRaw(entityId);
-
-        // TODO: orientation should be data taken from the orientation pool?
-        const orientation = vec3.create(0, 0, -1);
-
-        const target = vec3.add(position, orientation, vec3.create());
-        const up = vec3.create(0, 1, 0);
-
-        const viewMatrix = mat4.lookAt(position, target, up);
-        const projectionMatrix = mat4.perspective((fov * Math.PI) / 180, aspect, near, far);
-
-        const uniformData = new Float32Array(36);
-        uniformData.set(viewMatrix, 0);
-        uniformData.set(projectionMatrix, 16);
-        uniformData.set([position[0], position[1], position[2], 0], 32);
-
-        this.cameraData.set(entityId, uniformData);
-
-        const cameraBuffer = this.ensureCameraBuffer(world, entityId);
-        if (cameraBuffer) {
-            device.queue.writeBuffer(cameraBuffer, 0, uniformData);
-        }
-    }
 }
