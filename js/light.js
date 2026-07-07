@@ -23,7 +23,6 @@ export class Light {
     }
 
     get data() {
-        const len = Math.hypot(...this.dir);
         return new Float32Array([
             ...this.dir,    // direction
             ...this.colour  // color
