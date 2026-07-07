@@ -1,24 +1,19 @@
 import { System } from "./base.js";
 
 export class MovementSystem extends System {
-    constructor() {
+    constructor(size) {
         super({ Position: null, Velocity: null });
+        this.size = size;
     }
 
     update(world, deltaTime, activeEntities) {
         const query = world.query(['Position', 'Velocity']);
         const matchingEntities = query.filter(activeEntities, world.signatures);
-
-        const positions = world.pools.Position.data;
-        const velocities = world.pools.Velocity.data;
-
         for (const entityId of matchingEntities) {
-            const posOffset = entityId * 3;
-            const velOffset = entityId * 3;
-
-            positions[posOffset] += velocities[velOffset] * deltaTime;
-            positions[posOffset + 1] += velocities[velOffset + 1] * deltaTime;
-            positions[posOffset + 2] += velocities[velOffset + 2] * deltaTime;
+            const position = world.getComponent(entityId, "Position");
+            const velocity = world.getComponent(entityId, "Velocity");
+            [0, 1, 2].forEach(i => position[i] += velocity[i] * deltaTime);
+            world.updateComponent(entityId, "Position", position);            
         }
     }
 

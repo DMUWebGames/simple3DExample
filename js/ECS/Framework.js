@@ -291,6 +291,10 @@ export class EntityFramework {
         this.signatures.setBit(entityId, bit);
     }
 
+    updateComponent(entityId, componentName, data) {
+        this.pools[componentName]?.set(entityId, data);        
+    }
+
     removeComponent(entityId, componentName) {
         if (!this.pools[componentName]) return;
         this.pools[componentName].delete(entityId);
