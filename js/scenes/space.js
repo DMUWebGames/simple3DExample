@@ -28,7 +28,7 @@ const [asteroidBuffer, asteroidVertexCount] = sphericalVertexBuffer(device, 20, 
 
 
 export class SpaceScene {
-    constructor(size, nCubes, nAsteroids) {
+    constructor({size, nCubes, nAsteroids}) {
         this.size = size;
         this.framework = new EntityFramework({
             maxEntities: nCubes + nAsteroids + 1 + 1,
@@ -81,7 +81,7 @@ export class SpaceScene {
             this.framework.addComponent(id, "Orientation", randomOrientation());
             this.framework.addComponent(id, "Angle", randomAngle());
             this.framework.addComponent(id, "Rotation", Math.PI * (Math.random() - 0.5));
-            this.framework.addComponent(id, "Velocity", randomVector(-2, 2));
+            this.framework.addComponent(id, "Velocity", randomVector(-5, 5));
         })
 
         new Array(nAsteroids).fill(0).forEach((_, i) => { 
@@ -106,7 +106,7 @@ export class SpaceScene {
         this.framework.addComponent(this.cameraEntity, "Camera", {
             aspect: 16 / 9,
             near: 0.1,
-            far: 10000,
+            far: this.size * 0.95,
             fov: 60
         });
         this.framework.addComponent(this.cameraEntity, "Keys", {
@@ -125,7 +125,7 @@ export class SpaceScene {
 
         // Systems
         this.framework.addSystem(new CameraSystem());
-        this.framework.addSystem(new MovementSystem());
+        this.framework.addSystem(new MovementSystem(this.size));
         this.framework.addSystem(new RotationSystem());
         this.framework.addSystem(new LightingSystem());
         this.framework.addSystem(new ControlSystem());

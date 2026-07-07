@@ -12,7 +12,14 @@ export class MovementSystem extends System {
         for (const entityId of matchingEntities) {
             const position = world.getComponent(entityId, "Position");
             const velocity = world.getComponent(entityId, "Velocity");
-            [0, 1, 2].forEach(i => position[i] += velocity[i] * deltaTime);
+            [0, 1, 2].forEach(i => {
+                position[i] += velocity[i] * deltaTime;
+                if (position[i] > this.size) {
+                    position[i] -= this.size * 2;
+                } else if (position[i] < -this.size) {
+                    position[i] += this.size * 2;
+                }
+            });
             world.updateComponent(entityId, "Position", position);            
         }
     }
