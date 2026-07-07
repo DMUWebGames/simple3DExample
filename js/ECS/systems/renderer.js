@@ -146,13 +146,14 @@ export class Renderer extends System {
                 const entityId = group[i];
                 const position = world.getComponent(entityId, "Position");
                 const orientation = world.getComponent(entityId, "Orientation");
+                const scale = world.getComponent(entityId, "Scale");
                 const angle = world.getComponent(entityId, "Angle");
                 const modelMatrix = mat4.identity();
                 mat4.translate(modelMatrix, position, modelMatrix);
                 if (orientation && angle) {
                     mat4.rotate(modelMatrix, orientation, angle, modelMatrix);
                 }
-                // mat4.scale(result, this.scale, result);
+                mat4.scale(modelMatrix, [scale, scale, scale], modelMatrix);
 
                 transforms.set(modelMatrix, i * 16);
             }
