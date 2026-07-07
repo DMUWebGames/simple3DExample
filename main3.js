@@ -1,6 +1,6 @@
-import { TestScene } from "./js/scenes/test.js";
+import { SpaceScene } from "./js/scenes/space.js";
 
-const scene = new TestScene(100, 100);
+const scene = new SpaceScene(1000, 100);
 window.scene = scene;
 window.addEventListener("resize", () => scene.resize());
 scene.resize();

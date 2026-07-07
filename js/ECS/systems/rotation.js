@@ -2,18 +2,18 @@ import { System } from "./base.js";
 
 export class RotationSystem extends System {
     constructor() {
-        super({ Rotation: null, RotationSpeed: null });
+        super({ Angle: null, Rotation: null });
     }
 
     update(world, deltaTime, activeEntities) {
-        const query = world.query(['Rotation', 'RotationSpeed']);
+        const query = world.query(['Angle', "Rotation"]);
         const matchingEntities = query.filter(activeEntities, world.signatures);
 
+        const angles = world.pools.Angle.data;
         const rotations = world.pools.Rotation.data;
-        const speeds = world.pools.RotationSpeed.data;
 
         for (const entityId of matchingEntities) {
-            rotations[entityId] += speeds[entityId] * deltaTime;
+            angles[entityId] += rotations[entityId] * deltaTime;
         }
     }
 

@@ -11,10 +11,10 @@ const maxCrossTimeInSeconds = 10000;
 
 // Size of things
 const asteroidSize = 1000;
-const cubeSize = 10000;
+const cubeSize = 20000;
 
 // Number of things
-const nAsteroids = 10000;
+const nAsteroids = 20000;
 const nCubes = 10;
 
 // resolution of the thing vetices

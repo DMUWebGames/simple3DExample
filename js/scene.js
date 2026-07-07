@@ -13,7 +13,8 @@ async function createShader(path, options) {
 
 const asteroidModule = await createShader('shaders/thing.wgsl');
 const cubeModule = await createShader('shaders/cube.wgsl');
-const texture = await loadTexture('textures/asteroid.jpg');
+const asteroidTexture = await loadTexture('textures/asteroid.jpg');
+const cubeTexture = await loadTexture('textures/cube.jpg');
 const sampler = device.createSampler();
 
 export default class Scene {
@@ -109,20 +110,22 @@ export default class Scene {
         this.cubePipeline = device.createRenderPipeline({
             layout: "auto",
             vertex: {
-                module: cubeModule,
+                module: asteroidModule,
                 entryPoint: "vsMain",
                 buffers: [
                     {
-                        arrayStride: 24, // x, y, z, x, y, z = 6 * 4 bytes (vec3<f32>)
+                        arrayStride: 32, // x, y, z, x, y, z = 6 * 4 bytes (vec3<f32>)
                         attributes: [
                             { shaderLocation: 0, offset: 0, format: "float32x3" }, // x, y, z
-                            { shaderLocation: 1, offset: 12, format: "float32x3" }, // x, y, z
+                            { shaderLocation: 1, offset: 12, format: "float32x2" }, // u, v
+                            { shaderLocation: 2, offset: 20, format: "float32x3" }, // nx, ny, nz
+
                         ]
                     }
                 ]
             },
             fragment: {
-                module: cubeModule,
+                module: asteroidModule,
                 entryPoint: "fsMain",
                 targets: [{ format }]
             },
@@ -150,7 +153,7 @@ export default class Scene {
                 { binding: 1, resource: { buffer: this.cameraBuffer } },
                 { binding: 2, resource: { buffer: this.light.buffer(device) } },
                 { binding: 3, resource: sampler },
-                { binding: 4, resource: texture, }
+                { binding: 4, resource: asteroidTexture, }
             ]
         });
 
@@ -160,6 +163,8 @@ export default class Scene {
                 { binding: 0, resource: { buffer: this.cubeBuffer } },
                 { binding: 1, resource: { buffer: this.cameraBuffer } },
                 { binding: 2, resource: { buffer: this.light.buffer(device) } },
+                { binding: 3, resource: sampler },
+                { binding: 4, resource: cubeTexture, }
             ]
         });
 
