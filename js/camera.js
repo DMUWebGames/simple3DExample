@@ -6,7 +6,6 @@ export default class Camera {
         this.velocity = vec3.create(0, 0, 0);
         this.forward = vec3.create(0, 0, 1);
         this.up = vec3.create(0, 1, 0);
-        this.right = vec3.create(1, 0, 0);
         this.near = 100;
         this.far = radius * 0.95;
         this.maxSpeed = radius / 10;
@@ -16,6 +15,10 @@ export default class Camera {
         this.rollSpeed = 1.75;
         this.drag = 0;
         this.resize(canvas);
+    }
+
+    get right() { 
+        return vec3.normalize(vec3.cross(this.forward, this.up));
     }
 
     resize(canvas) {
@@ -38,9 +41,7 @@ export default class Camera {
     addMouseLook(deltaX, deltaY) {
         const yawAmount = -deltaX * this.mouseSensitivity;
         const pitchAmount = -deltaY * this.mouseSensitivity;
-
         this.forward = vec3.normalize(this.rotateVectorAroundAxis(this.forward, this.up, yawAmount));
-        this.right = vec3.normalize(vec3.cross(this.forward, this.up));
         this.forward = vec3.normalize(this.rotateVectorAroundAxis(this.forward, this.right, pitchAmount));
         this.up = vec3.normalize(vec3.cross(this.right, this.forward));
     }
@@ -48,7 +49,6 @@ export default class Camera {
     addRoll(amount, elapsed) {
         const rollAmount = amount * this.rollSpeed * elapsed;
         this.up = vec3.normalize(this.rotateVectorAroundAxis(this.up, this.forward, rollAmount));
-        this.right = vec3.normalize(vec3.cross(this.forward, this.up));
         this.up = vec3.normalize(vec3.cross(this.right, this.forward));
     }
 
