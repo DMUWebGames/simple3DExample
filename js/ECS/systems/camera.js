@@ -35,19 +35,12 @@ export class CameraSystem extends System {
 
     dataForCamera(world, cameraId) {
 
-        // Check the data for the camera buffer
-        if (!world.pools.Position?.has(cameraId) || !world.pools.Camera.has(cameraId)) {
-            return;
-        }
-
         // get the data
-        const position = vec3.create(...world.pools.Position.getRaw(cameraId));
-        const [aspect, near, far, fov] = world.pools.Camera.getRaw(cameraId);
+        const position = world.getComponent(cameraId, "Position");
+        const orientation = world.getComponent(cameraId, "Orientation");
+        const [aspect, near, far, fov] = world.getComponent(cameraId, "Camera");
 
-        // TODO: orientation should be data taken from the orientation pool?
-        const orientation = vec3.create(0, 0, -1);
-
-        // calculate the matrices
+        // calculate the matrix
         const target = vec3.add(position, orientation, vec3.create());
         const up = vec3.create(0, 1, 0);
         const viewMatrix = mat4.lookAt(position, target, up);

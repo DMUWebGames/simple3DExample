@@ -7,8 +7,8 @@ import { MovementSystem } from "../ECS/systems/movement.js";
 import { sphericalVertexBuffer } from "../sphere.js";
 import { RotationSystem } from "../ECS/systems/rotation.js";
 import { LightingSystem } from "../ECS/systems/lighting.js";
-import { ControlSystem } from "../ECS/systems/controls.js";
-import { randomOrientation } from "../tools.js";
+import { InputSystem } from "../ECS/systems/input.js";
+import { randomOrientation, randomQuat } from "../tools.js";
 import { loadTexture } from "../texture.js";
 
 const randomVector = (min, max) => {
@@ -49,15 +49,10 @@ export class SpaceScene {
                 },
                 Direction: { x: 0.5, y: -1.0, z: 0.3, w: 0 },
                 Colour: { r: 1, g: 1, b: 1, a: 0 },
-                Keys: {
-                    w: "thrust",
-                    s: "break",
-                    a: "rollLeft",
-                    d: "rollRight",
-                },
-                Mouse: {
-                    x: "yaw",
-                    y: "pitch"
+                Control: {
+                    yaw: 0,
+                    pitch: 0,
+                    roll: 0
                 }
             }
         });
@@ -83,42 +78,37 @@ export class SpaceScene {
             texture: celestialGridTexture
         });
 
-        new Array(nCubes).fill(0).forEach((_, i) => { 
+        new Array(nCubes).fill(0).forEach((_, i) => {
             const id = this.framework.createEntity();
             this.framework.addComponent(id, "Renderable", cubeRenderableId);
             this.framework.addComponent(id, "Position", randomVector(-size, size));
-            this.framework.addComponent(id, "Orientation", randomOrientation());
+            this.framework.addComponent(id, "Orientation", randomQuat());
             this.framework.addComponent(id, "Scale", 1);
             this.framework.addComponent(id, "Angle", randomAngle());
             this.framework.addComponent(id, "Rotation", Math.PI * (Math.random() - 0.5));
             this.framework.addComponent(id, "Velocity", randomVector(-5, 5));
-        })
+        });
 
-        new Array(nAsteroids).fill(0).forEach((_, i) => { 
+        new Array(nAsteroids).fill(0).forEach((_, i) => {
             const id = this.framework.createEntity();
             this.framework.addComponent(id, "Renderable", asteroidRenderableId);
             this.framework.addComponent(id, "Position", randomVector(-size, size));
-            this.framework.addComponent(id, "Orientation", randomOrientation());
+            this.framework.addComponent(id, "Orientation", randomQuat());
             this.framework.addComponent(id, "Scale", 1);
             this.framework.addComponent(id, "Angle", randomAngle());
             this.framework.addComponent(id, "Rotation", Math.PI * (Math.random() - 0.5));
             this.framework.addComponent(id, "Velocity", randomVector(-0.1, 0.1));
-        })
+        });
 
         this.background = this.framework.createEntity();
         this.framework.addComponent(this.background, "Renderable", backgroundRenderableId);
         this.framework.addComponent(this.background, "Position", { x: 0, y: 0, z: 0 });
         this.framework.addComponent(this.background, "Scale", this.size);
 
-
-
         // Camera
         this.cameraId = this.framework.createEntity();
         this.framework.addComponent(this.cameraId, "Position", { x: 0, y: 0, z: 0 });
-        this.framework.addComponent(this.cameraId, "Orientation", randomOrientation());
-        this.framework.addComponent(this.cameraId, "Rotation", Math.PI * (Math.random() - 0.5));
-        this.framework.addComponent(this.cameraId, "Angle", randomAngle());
-        this.framework.addComponent(this.cameraId, "Rotation", Math.PI * (Math.random() - 0.5));
+        this.framework.addComponent(this.cameraId, "Orientation", randomQuat());
 
         this.framework.addComponent(this.cameraId, "Camera", {
             aspect: 16 / 9,
@@ -126,19 +116,21 @@ export class SpaceScene {
             far: this.size,
             fov: 60
         });
-        this.framework.addComponent(this.cameraId, "Keys", {
-            w: "thrust",
-            s: "break",
-            a: "rollLeft",
-            d: "rollRight",
-        });
+
+        // Controls
+        // this.framework.addComponent(this.cameraId, "Forward", { x: 0, y: 0, z: 1 });
+        // this.framework.addComponent(this.cameraId, "Control", {
+        //     yaw: 0,
+        //     pitch: 0,
+        //     roll: 0
+        // });
         
         // Lights
         this.lightId = this.framework.createEntity();
         this.framework.addComponent(this.lightId, "Direction", { x: -0.5, y: -1.0, z: 0.3, w: 0 });
         this.framework.addComponent(this.lightId, "Colour", { r: 0.95, g: 0.9, b: 0.3, a: 0 });
         
-
+        // Register some things for systems to access 
         this.framework.registerResource("activeCameraEntity", this.cameraId);
         this.framework.registerResource("activeLightEntity", this.lightId);
         this.framework.registerResource("activePlayerEntity", this.cameraId);
@@ -148,7 +140,7 @@ export class SpaceScene {
         this.framework.addSystem(new MovementSystem(this.size));
         this.framework.addSystem(new RotationSystem());
         this.framework.addSystem(new LightingSystem());
-        this.framework.addSystem(new ControlSystem(canvas));
+        this.framework.addSystem(new InputSystem(canvas));
         this.framework.addSystem(new Renderer());
 
     }

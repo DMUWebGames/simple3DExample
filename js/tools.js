@@ -1,4 +1,16 @@
-import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
+import { mat4, vec3, quat } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
+
+export function randomQuat() {
+    const q = quat.fromEuler(
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+        Math.random() * Math.PI * 2,
+        "xyz"
+    );
+
+    return quat.normalize(q);
+}
+
 
 export function mappedBuffer(device, data, args) { 
     const buffer = device.createBuffer({

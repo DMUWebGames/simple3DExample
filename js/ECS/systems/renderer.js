@@ -128,6 +128,9 @@ export class Renderer extends System {
                 depthStoreOp: "store",
             }
         });
+
+        
+
         
         renderPass.setPipeline(this.pipeline);
         
@@ -140,9 +143,7 @@ export class Renderer extends System {
 
             // create an array to hold the transformation data
             const transforms = new Float32Array(group.length * 16);
-
-            // fill the array
-            for (const i in group) {//let i = 0; i < group.length; i++) {
+            for (const i in group) {
                 const entityId = group[i];
                 const position = world.getComponent(entityId, "Position");
                 const orientation = world.getComponent(entityId, "Orientation");
@@ -154,7 +155,6 @@ export class Renderer extends System {
                     mat4.rotate(modelMatrix, orientation, angle, modelMatrix);
                 }
                 mat4.scale(modelMatrix, [scale, scale, scale], modelMatrix);
-
                 transforms.set(modelMatrix, i * 16);
             }
 

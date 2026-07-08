@@ -19,9 +19,6 @@ struct Light {
     _pad2: f32,
 };
 
-struct Asteroid {
-    modelMatrix: mat4x4<f32>
-};
 
 struct Camera {
     viewMatrix: mat4x4<f32>,
@@ -30,7 +27,7 @@ struct Camera {
     _pad: f32
 }
 
-@group(0) @binding(0) var<storage> asteroids: array<Asteroid>;
+@group(0) @binding(0) var<storage> transforms: array<mat4x4<f32>>;
 @group(0) @binding(1) var<uniform> camera: Camera;
 @group(0) @binding(2) var<uniform> light: Light;
 
@@ -40,11 +37,11 @@ struct Camera {
 @vertex
 fn vsMain(@builtin(instance_index) instanceIndex: u32, input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
-    let asteroid = asteroids[instanceIndex];
-    let worldPos = asteroid.modelMatrix * vec4<f32>(input.position, 1.0);
+    let transform = transforms[instanceIndex];
+    let worldPos = transform * vec4<f32>(input.position, 1.0);
     output.position = camera.projMatrix * camera.viewMatrix * worldPos;
     output.uv = input.uv;
-    output.normal = normalize((asteroid.modelMatrix * vec4<f32>(input.normal, 0.0)).xyz);
+    output.normal = normalize((transform * vec4<f32>(input.normal, 0.0)).xyz);
     output.worldPos = worldPos.xyz;
     return output;
 }
