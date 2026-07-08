@@ -10,6 +10,7 @@ import { mat4 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js
 // }
 
 // const thingModule = await createShader("shaders/thing.wgsl");
+
 const sampler = device.createSampler();
 
 const shaders = new Map();
@@ -18,7 +19,7 @@ export class Renderer extends System {
     constructor() {
         super({ Position: { x: 0, y: 0, z: 0 }, Renderable: { mesh: "" }, Orientation: null });
         this.instanceBuffers = new Map();
-        this.pipeline = this.createPipeline();
+        // this.pipeline = this.createPipeline();
         this.depthTexture = null;
     }
 
@@ -57,18 +58,6 @@ export class Renderer extends System {
         });
     }
 
-    // createBindGroup(layout, instanceBuffer, cameraBuffer, lightBuffer) {
-    //     return device.createBindGroup({
-    //         layout,
-    //         entries: [
-    //             { binding: 0, resource: { buffer: instanceBuffer } },
-    //             { binding: 1, resource: { buffer: cameraBuffer } },
-    //             { binding: 2, resource: { buffer: lightBuffer } },
-    //             { binding: 3, resource: sampler },
-    //             { binding: 4, resource: asteroidTexture }
-    //         ]
-    //     });
-    // }
 
     resize() {
         canvas.width = document.body.clientWidth;
@@ -104,15 +93,7 @@ export class Renderer extends System {
         }
 
 
-        // Create a group of entities per mesh (renderable[0] is the mesh resourceId)
-        const groups = Map.groupBy(renderableEntities, (entityId) => {
-            return world.getComponent(entityId, "Renderable")[0];
-        });
-
-        if (!groups.size) {
-            return;
-        }
-        
+       
         const encoder = device.createCommandEncoder();
 
         const renderPass = encoder.beginRenderPass({
@@ -129,11 +110,16 @@ export class Renderer extends System {
             }
         });
 
-        
+        // Create a group of entities per mesh (renderable[0] is the mesh resourceId)
+        const groups = Map.groupBy(renderableEntities, (entityId) => {
+            return world.getComponent(entityId, "Renderable")[0];
+        });
+
+        if (!groups.size) {
+            return;
+        }
 
 
-        renderPass.setPipeline(this.pipeline);
-        
         for (const [renderableId, group] of groups) {
            
             // TODO: It looks like I'm applying the transformations here.
@@ -176,9 +162,46 @@ export class Renderer extends System {
             // load the renderable
             const {vertexBuffer, vertexCount, material} = world.getResourceById(renderableId);
 
+            // setup a pipeline
+            const pipeline = device.createRenderPipeline({
+                layout: "auto",
+                vertex: {
+                    module: material.module,
+                    entryPoint: "vsMain",
+                    buffers: [
+                        {
+                            arrayStride: 32,
+                            attributes: [
+                                { shaderLocation: 0, offset: 0, format: "float32x3" },
+                                { shaderLocation: 1, offset: 12, format: "float32x2" },
+                                { shaderLocation: 2, offset: 20, format: "float32x3" },
+                            ]
+                        }
+                    ]
+                },
+                fragment: {
+                    module: material.module,
+                    entryPoint: "fsMain",
+                    targets: [{ format }]
+                },
+                primitive: {
+                    topology: "triangle-list"
+                },
+                depthStencil: {
+                    format: "depth24plus",
+                    depthWriteEnabled: true,
+                    depthCompare: "less",
+                    stencil: {},
+                    bias: {},
+                },
+            });
+
+
+            
+            
             // bind the data to the pipeline
             const sceneWideBindGroup = device.createBindGroup({
-                layout: this.pipeline.getBindGroupLayout(0),
+                layout: pipeline.getBindGroupLayout(0),
                 entries: [
                     { binding: 0, resource: { buffer: instanceBuffer } },
                     { binding: 1, resource: { buffer: cameraBuffer } },
@@ -186,14 +209,15 @@ export class Renderer extends System {
                     { binding: 3, resource: sampler },
                 ]
             });
-
+            
             const textureBindGroup = device.createBindGroup({
-                layout: this.pipeline.getBindGroupLayout(1),
+                layout: pipeline.getBindGroupLayout(1),
                 entries: material.textures.map(t => {
                     return { binding: 0, resource: t }
                 })
             });
-
+            
+            renderPass.setPipeline(pipeline);
             renderPass.setBindGroup(0, sceneWideBindGroup);
             renderPass.setBindGroup(1, textureBindGroup);
             renderPass.setVertexBuffer(0, vertexBuffer);
