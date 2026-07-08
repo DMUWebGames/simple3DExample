@@ -3,6 +3,8 @@ import { System } from "./base.js";
 import { device } from "../../setup.js";
 
 const CAMERA_BUFFER_SIZE = 2 * 16 * 4 + 16;
+const LOCAL_FORWARD = vec3.create(0, 0, -1);
+const LOCAL_UP = vec3.create(0, 1, 0);
 
 export class CameraSystem extends System {
     constructor() {
@@ -35,15 +37,16 @@ export class CameraSystem extends System {
 
     dataForCamera(world, cameraId) {
 
-        // get the data
+        // View Matrix
         const position = world.getComponent(cameraId, "Position");
         const orientation = world.getComponent(cameraId, "Orientation");
-        const [aspect, near, far, fov] = world.getComponent(cameraId, "Camera");
-
-        // calculate the matrix
-        const target = vec3.add(position, orientation, vec3.create());
-        const up = vec3.create(0, 1, 0);
+        const forward = vec3.transformQuat(LOCAL_FORWARD, orientation);
+        const up = vec3.transformQuat(LOCAL_UP, orientation);
+        const target = vec3.add(position, forward);
         const viewMatrix = mat4.lookAt(position, target, up);
+
+        // Projection matrix
+        const [aspect, near, far, fov] = world.getComponent(cameraId, "Camera");
         const projectionMatrix = mat4.perspective((fov * Math.PI) / 180, aspect, near, far);
 
         // Prepare the data for the buffer
