@@ -3,14 +3,6 @@ import { device, format, ctx, canvas } from "../../setup.js";
 import { Light } from "../../light.js";
 import { mat4 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
 
-// async function createShader(path) {
-//     const response = await fetch(path);
-//     const code = await response.text();
-//     return device.createShaderModule({ code, label: path });
-// }
-
-// const thingModule = await createShader("shaders/thing.wgsl");
-
 const sampler = device.createSampler();
 
 const shaders = new Map();
@@ -19,15 +11,15 @@ export class Renderer extends System {
     constructor() {
         super({ Position: { x: 0, y: 0, z: 0 }, Renderable: { mesh: "" }, Orientation: null });
         this.instanceBuffers = new Map();
-        // this.pipeline = this.createPipeline();
+        this.pipelines = new Map();
         this.depthTexture = null;
     }
 
-    createPipeline() {
+    createPipeline(module) {
         return device.createRenderPipeline({
             layout: "auto",
             vertex: {
-                module: thingModule,
+                module: module,
                 entryPoint: "vsMain",
                 buffers: [
                     {
@@ -41,7 +33,7 @@ export class Renderer extends System {
                 ]
             },
             fragment: {
-                module: thingModule,
+                module: module,
                 entryPoint: "fsMain",
                 targets: [{ format }]
             },
@@ -58,6 +50,14 @@ export class Renderer extends System {
         });
     }
 
+    getPipeline(module) {
+        
+        if (!this.pipelines.has(module)) {
+            console.log("creating pipeline for", module);
+            this.pipelines.set(module, this.createPipeline(module))
+        }
+        return this.pipelines.get(module);
+    }
 
     resize() {
         canvas.width = document.body.clientWidth;
@@ -92,8 +92,6 @@ export class Renderer extends System {
             return;
         }
 
-
-       
         const encoder = device.createCommandEncoder();
 
         const renderPass = encoder.beginRenderPass({
@@ -125,7 +123,8 @@ export class Renderer extends System {
             // TODO: It looks like I'm applying the transformations here.
             // Can it be offloaded to a transformation system?
             // So I can just load the pre-built buffer here?
-            // I guess ultimately I want this to be done in a compute shader
+            // Perhaps I want this to be done in a compute shader?
+            // But for now just moving the code out of the way would be nice.
 
             // create an array to hold the transformation data
             const transforms = new Float32Array(group.length * 16);
@@ -163,41 +162,7 @@ export class Renderer extends System {
             const {vertexBuffer, vertexCount, material} = world.getResourceById(renderableId);
 
             // setup a pipeline
-            const pipeline = device.createRenderPipeline({
-                layout: "auto",
-                vertex: {
-                    module: material.module,
-                    entryPoint: "vsMain",
-                    buffers: [
-                        {
-                            arrayStride: 32,
-                            attributes: [
-                                { shaderLocation: 0, offset: 0, format: "float32x3" },
-                                { shaderLocation: 1, offset: 12, format: "float32x2" },
-                                { shaderLocation: 2, offset: 20, format: "float32x3" },
-                            ]
-                        }
-                    ]
-                },
-                fragment: {
-                    module: material.module,
-                    entryPoint: "fsMain",
-                    targets: [{ format }]
-                },
-                primitive: {
-                    topology: "triangle-list"
-                },
-                depthStencil: {
-                    format: "depth24plus",
-                    depthWriteEnabled: true,
-                    depthCompare: "less",
-                    stencil: {},
-                    bias: {},
-                },
-            });
-
-
-            
+            const pipeline = this.getPipeline(material.module);
             
             // bind the data to the pipeline
             const sceneWideBindGroup = device.createBindGroup({
