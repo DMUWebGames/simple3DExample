@@ -116,6 +116,7 @@ export class SpaceScene {
         this.cameraId = this.framework.createEntity();
         this.framework.addComponent(this.cameraId, "Position", { x: 0, y: 0, z: 0 });
         this.framework.addComponent(this.cameraId, "Orientation", randomQuat());
+        this.framework.addComponent(this.cameraId, "Rotation", randomQuatBetween(-0.01, 0.01));
 
         this.framework.addComponent(this.cameraId, "Camera", {
             aspect: 16 / 9,
