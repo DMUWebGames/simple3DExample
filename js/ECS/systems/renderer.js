@@ -3,16 +3,16 @@ import { device, format, ctx, canvas } from "../../setup.js";
 import { Light } from "../../light.js";
 import { mat4 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
 
-async function createShader(path) {
-    const response = await fetch(path);
-    const code = await response.text();
-    return device.createShaderModule({ code, label: path });
-}
+// async function createShader(path) {
+//     const response = await fetch(path);
+//     const code = await response.text();
+//     return device.createShaderModule({ code, label: path });
+// }
 
-const thingModule = await createShader("shaders/thing.wgsl");
+// const thingModule = await createShader("shaders/thing.wgsl");
 const sampler = device.createSampler();
 
-
+const shaders = new Map();
 
 export class Renderer extends System {
     constructor() {
@@ -57,18 +57,18 @@ export class Renderer extends System {
         });
     }
 
-    createBindGroup(layout, instanceBuffer, cameraBuffer, lightBuffer) {
-        return device.createBindGroup({
-            layout,
-            entries: [
-                { binding: 0, resource: { buffer: instanceBuffer } },
-                { binding: 1, resource: { buffer: cameraBuffer } },
-                { binding: 2, resource: { buffer: lightBuffer } },
-                { binding: 3, resource: sampler },
-                { binding: 4, resource: asteroidTexture }
-            ]
-        });
-    }
+    // createBindGroup(layout, instanceBuffer, cameraBuffer, lightBuffer) {
+    //     return device.createBindGroup({
+    //         layout,
+    //         entries: [
+    //             { binding: 0, resource: { buffer: instanceBuffer } },
+    //             { binding: 1, resource: { buffer: cameraBuffer } },
+    //             { binding: 2, resource: { buffer: lightBuffer } },
+    //             { binding: 3, resource: sampler },
+    //             { binding: 4, resource: asteroidTexture }
+    //         ]
+    //     });
+    // }
 
     resize() {
         canvas.width = document.body.clientWidth;
@@ -131,10 +131,10 @@ export class Renderer extends System {
 
         
 
-        
+
         renderPass.setPipeline(this.pipeline);
         
-        for (const [meshId, group] of groups) {
+        for (const [renderableId, group] of groups) {
            
             // TODO: It looks like I'm applying the transformations here.
             // Can it be offloaded to a transformation system?
@@ -159,7 +159,7 @@ export class Renderer extends System {
             }
 
             // See if we have a buffer already set up
-            let instanceBuffer = this.instanceBuffers.get(meshId);
+            let instanceBuffer = this.instanceBuffers.get(renderableId);
             
             // create or expand the buffer as necessary
             if (!instanceBuffer || instanceBuffer.size < transforms.byteLength) {
@@ -168,30 +168,36 @@ export class Renderer extends System {
                     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
                 });
                 // so we can reuse buffers
-                this.instanceBuffers.set(meshId, instanceBuffer);
+                this.instanceBuffers.set(renderableId, instanceBuffer);
             }
             // write the data to the buffer
             device.queue.writeBuffer(instanceBuffer, 0, transforms);
             
             // load the renderable
-            const mesh = world.getResourceById(meshId);
+            const {vertexBuffer, vertexCount, material} = world.getResourceById(renderableId);
 
             // bind the data to the pipeline
-            const bindGroup = device.createBindGroup({
+            const sceneWideBindGroup = device.createBindGroup({
                 layout: this.pipeline.getBindGroupLayout(0),
                 entries: [
                     { binding: 0, resource: { buffer: instanceBuffer } },
                     { binding: 1, resource: { buffer: cameraBuffer } },
                     { binding: 2, resource: { buffer: lightBuffer } },
                     { binding: 3, resource: sampler },
-                    { binding: 4, resource: mesh.texture }
                 ]
             });
 
+            const textureBindGroup = device.createBindGroup({
+                layout: this.pipeline.getBindGroupLayout(1),
+                entries: material.textures.map(t => {
+                    return { binding: 0, resource: t }
+                })
+            });
 
-            renderPass.setBindGroup(0, bindGroup);
-            renderPass.setVertexBuffer(0, mesh.vertexBuffer);
-            renderPass.draw(mesh.vertexCount, group.length, 0, 0);
+            renderPass.setBindGroup(0, sceneWideBindGroup);
+            renderPass.setBindGroup(1, textureBindGroup);
+            renderPass.setVertexBuffer(0, vertexBuffer);
+            renderPass.draw(vertexCount, group.length, 0, 0);
         }
 
         renderPass.end();

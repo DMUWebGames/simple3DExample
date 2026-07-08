@@ -1,0 +1,4 @@
+{
+    "module": "thing.wgsl",
+    "textures": ["celestial_grid_bright.JPG"]
+}

@@ -42,7 +42,7 @@ export class InputSystem extends System {
 
     update(world, deltaTime, activeEntities) {
         const playerId = world.getResource("activePlayerEntity");
-        const roll = world.getComponent(playerId, "Roll");
+        const rpy = world.getComponent(playerId, "RollPitchYaw");
         const pitch = world.getComponent(playerId, "Pitch");
         const yaw = world.getComponent(playerId, "Yaw");
         // console.log(this.mouseDelta);

@@ -10,6 +10,7 @@ import { LightingSystem } from "../ECS/systems/lighting.js";
 import { InputSystem } from "../ECS/systems/input.js";
 import { randomOrientation, randomQuat } from "../tools.js";
 import { loadTexture } from "../texture.js";
+import { loadMaterial } from "../meterial.js";
 
 const randomVector = (min, max) => {
     return {
@@ -21,12 +22,17 @@ const randomVector = (min, max) => {
 
 const randomAngle = () => 2 * Math.PI * Math.random();
 
-const asteroidTexture = await loadTexture('textures/asteroid.jpg');
-const cubeTexture = await loadTexture('textures/cube.jpg');
-const celestialGridTexture = await loadTexture('textures/celestial_grid_bright.jpg');
+
+
+// const asteroidTexture = await loadTexture('asteroid.jpg');
+// const cubeTexture = await loadTexture('cube.jpg');
+// const celestialGridTexture = await loadTexture('celestial_grid_bright.jpg');
 const [cubeBuffer, cubeVertexCount] = cubeVertexBuffer(device);
 const [sphereBuffer, sphereVertexCount] = sphericalVertexBuffer(device, 20, 1);
 
+const cubeMaterial = await loadMaterial("materials/cube.json");
+const asteroidMaterial = await loadMaterial("materials/asteroid.json");
+const skyBoxMaterial = await loadMaterial("materials/skybox.json");
 
 export class SpaceScene {
     constructor({size, nCubes, nAsteroids}) {
@@ -61,21 +67,21 @@ export class SpaceScene {
         const cubeRenderableId = this.framework.registerResource("cube", {
             vertexBuffer: cubeBuffer,
             vertexCount: cubeVertexCount,
-            texture: cubeTexture
+            material: cubeMaterial
         });
 
         // Rendering data for Asteroids
         const asteroidRenderableId = this.framework.registerResource("asteroid", {
             vertexBuffer: sphereBuffer,
             vertexCount: sphereVertexCount,
-            texture: asteroidTexture
+            material: asteroidMaterial
         });
 
         // Rendering data for the background
-        const backgroundRenderableId = this.framework.registerResource("background", {
+        const skyBoxRenderableId = this.framework.registerResource("background", {
             vertexBuffer: sphereBuffer,
             vertexCount: sphereVertexCount,
-            texture: celestialGridTexture
+            material: skyBoxMaterial
         });
 
         new Array(nCubes).fill(0).forEach((_, i) => {
@@ -101,7 +107,7 @@ export class SpaceScene {
         });
 
         this.background = this.framework.createEntity();
-        this.framework.addComponent(this.background, "Renderable", backgroundRenderableId);
+        this.framework.addComponent(this.background, "Renderable", skyBoxRenderableId);
         this.framework.addComponent(this.background, "Position", { x: 0, y: 0, z: 0 });
         this.framework.addComponent(this.background, "Scale", this.size);
 

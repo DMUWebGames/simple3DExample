@@ -31,8 +31,9 @@ struct Camera {
 @group(0) @binding(1) var<uniform> camera: Camera;
 @group(0) @binding(2) var<uniform> light: Light;
 
-@group(0) @binding(3) var mySampler: sampler;
-@group(0) @binding(4) var myTexture: texture_2d<f32>;
+@group(0) @binding(3) var sampler2D: sampler;
+
+@group(1) @binding(0) var albedoTexture: texture_2d<f32>;
 
 @vertex
 fn vsMain(@builtin(instance_index) instanceIndex: u32, input: VertexInput) -> VertexOutput {
@@ -48,7 +49,7 @@ fn vsMain(@builtin(instance_index) instanceIndex: u32, input: VertexInput) -> Ve
 
 @fragment
 fn fsMain(input: VertexOutput) -> @location(0) vec4<f32> {
-    let textureColor = textureSample(myTexture, mySampler, input.uv);
+    let textureColor = textureSample(albedoTexture, sampler2D, input.uv);
     
     let N = normalize(input.normal);
     let L = normalize(-light.direction);
