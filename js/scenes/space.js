@@ -10,7 +10,7 @@ import { LightingSystem } from "../ECS/systems/lighting.js";
 import { InputSystem } from "../ECS/systems/input.js";
 import { randomOrientation, randomQuat, randomQuatBetween } from "../tools.js";
 import { loadTexture } from "../texture.js";
-import { loadMaterial } from "../meterial.js";
+import { loadMaterial } from "../material.js";
 
 const randomVector = (min, max) => {
     return {
