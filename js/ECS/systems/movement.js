@@ -9,6 +9,7 @@ export class MovementSystem extends System {
     update(world, deltaTime, activeEntities) {
         const query = world.query(['Position', 'Velocity']);
         const matchingEntities = query.filter(activeEntities, world.signatures);
+        
         for (const entityId of matchingEntities) {
             const position = world.getComponent(entityId, "Position");
             const velocity = world.getComponent(entityId, "Velocity");
@@ -23,5 +24,4 @@ export class MovementSystem extends System {
             world.updateComponent(entityId, "Position", position);            
         }
     }
-
 }

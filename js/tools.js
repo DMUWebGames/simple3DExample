@@ -7,9 +7,20 @@ export function randomQuat() {
         Math.random() * Math.PI * 2,
         "xyz"
     );
-
     return quat.normalize(q);
 }
+
+export function randomQuatBetween(min, max) {
+    const q = quat.fromEuler(
+        min + Math.random() * (max - min) * Math.PI * 2,
+        min + Math.random() * (max - min) * Math.PI * 2,
+        min + Math.random() * (max - min) * Math.PI * 2,
+        "xyz"
+    );
+    return quat.normalize(q);
+}
+
+// console.log(mat4.fromQuat(randomQuat()));
 
 
 export function mappedBuffer(device, data, args) { 

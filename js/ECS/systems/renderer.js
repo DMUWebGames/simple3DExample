@@ -60,9 +60,6 @@ export class Renderer extends System {
     }
 
     resize() {
-        canvas.width = document.body.clientWidth;
-        canvas.height = document.body.clientHeight;
-
         this.depthTexture = device.createTexture({
             size: [canvas.width, canvas.height],
             format: "depth24plus",
@@ -117,7 +114,6 @@ export class Renderer extends System {
             return;
         }
 
-
         for (const [renderableId, group] of groups) {
            
             // TODO: It looks like I'm applying the transformations here.
@@ -133,13 +129,12 @@ export class Renderer extends System {
                 const position = world.getComponent(entityId, "Position");
                 const orientation = world.getComponent(entityId, "Orientation");
                 const scale = world.getComponent(entityId, "Scale");
-                const angle = world.getComponent(entityId, "Angle");
-                const modelMatrix = mat4.identity();
-                mat4.translate(modelMatrix, position, modelMatrix);
-                if (orientation && angle) {
-                    mat4.rotate(modelMatrix, orientation, angle, modelMatrix);
-                }
-                mat4.scale(modelMatrix, [scale, scale, scale], modelMatrix);
+                
+                const oMat = mat4.fromQuat(orientation);
+                const modelMatrix = mat4.multiply(
+                    mat4.translation(position),
+                    mat4.multiply(oMat, mat4.scaling([scale, scale, scale]))
+                );
                 transforms.set(modelMatrix, i * 16);
             }
 

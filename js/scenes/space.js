@@ -8,7 +8,7 @@ import { sphericalVertexBuffer } from "../sphere.js";
 import { RotationSystem } from "../ECS/systems/rotation.js";
 import { LightingSystem } from "../ECS/systems/lighting.js";
 import { InputSystem } from "../ECS/systems/input.js";
-import { randomOrientation, randomQuat } from "../tools.js";
+import { randomOrientation, randomQuat, randomQuatBetween } from "../tools.js";
 import { loadTexture } from "../texture.js";
 import { loadMaterial } from "../meterial.js";
 
@@ -23,14 +23,10 @@ const randomVector = (min, max) => {
 const randomAngle = () => 2 * Math.PI * Math.random();
 
 
-
-// const asteroidTexture = await loadTexture('asteroid.jpg');
-// const cubeTexture = await loadTexture('cube.jpg');
-// const celestialGridTexture = await loadTexture('celestial_grid_bright.jpg');
 const [cubeBuffer, cubeVertexCount] = cubeVertexBuffer(device);
 const [sphereBuffer, sphereVertexCount] = sphericalVertexBuffer(device, 20, 1);
 
-const cubeMaterial = await loadMaterial("materials/cube.json");
+const crateMaterial = await loadMaterial("materials/crate.json");
 const asteroidMaterial = await loadMaterial("materials/asteroid.json");
 const skyBoxMaterial = await loadMaterial("materials/skybox.json");
 
@@ -41,10 +37,10 @@ export class SpaceScene {
             maxEntities: nCubes + nAsteroids + 1 + 1 + 1,
             components: {
                 Position: { x: 0, y: 0, z: 0 },
-                Orientation: { x: 0, y: 0, z: 0 },
+                Orientation: randomQuat(),
                 Scale: 0,
                 Angle: 0,
-                Rotation: 0,
+                Rotation: randomQuatBetween(),
                 Velocity: { x: 0, y: 0, z: 0 },
                 Renderable: { mesh: "" },
                 Camera: {
@@ -63,11 +59,15 @@ export class SpaceScene {
             }
         });
 
+        // const cubeMaterialId = this.framework.registerResource("cubeMaterial", cubeMaterial);
+        // const asteroidMaterialId = this.framework.registerResource("asteroidMaterial", asteroidMaterial);
+        // const skyBoxMaterialId = this.framework.registerResource("skyBoxMaterial", skyBoxMaterial);
+
         // Rendering data for Cubes
         const cubeRenderableId = this.framework.registerResource("cube", {
             vertexBuffer: cubeBuffer,
             vertexCount: cubeVertexCount,
-            material: cubeMaterial
+            material: crateMaterial
         });
 
         // Rendering data for Asteroids
@@ -91,8 +91,8 @@ export class SpaceScene {
             this.framework.addComponent(id, "Orientation", randomQuat());
             this.framework.addComponent(id, "Scale", 1);
             this.framework.addComponent(id, "Angle", randomAngle());
-            this.framework.addComponent(id, "Rotation", Math.PI * (Math.random() - 0.5));
-            this.framework.addComponent(id, "Velocity", randomVector(-5, 5));
+            this.framework.addComponent(id, "Rotation", randomQuat());
+            // this.framework.addComponent(id, "Velocity", randomVector(-5, 5));
         });
 
         new Array(nAsteroids).fill(0).forEach((_, i) => {
@@ -102,12 +102,13 @@ export class SpaceScene {
             this.framework.addComponent(id, "Orientation", randomQuat());
             this.framework.addComponent(id, "Scale", 1);
             this.framework.addComponent(id, "Angle", randomAngle());
-            this.framework.addComponent(id, "Rotation", Math.PI * (Math.random() - 0.5));
-            this.framework.addComponent(id, "Velocity", randomVector(-0.1, 0.1));
+            this.framework.addComponent(id, "Rotation", randomQuat());
+            this.framework.addComponent(id, "Velocity", randomVector(-0.5, 0.5));
         });
 
         this.background = this.framework.createEntity();
         this.framework.addComponent(this.background, "Renderable", skyBoxRenderableId);
+        this.framework.addComponent(this.background, "Orientation", randomQuat());
         this.framework.addComponent(this.background, "Position", { x: 0, y: 0, z: 0 });
         this.framework.addComponent(this.background, "Scale", this.size);
 
@@ -122,14 +123,6 @@ export class SpaceScene {
             far: this.size,
             fov: 60
         });
-
-        // Controls
-        // this.framework.addComponent(this.cameraId, "Forward", { x: 0, y: 0, z: 1 });
-        // this.framework.addComponent(this.cameraId, "Control", {
-        //     yaw: 0,
-        //     pitch: 0,
-        //     roll: 0
-        // });
         
         // Lights
         this.lightId = this.framework.createEntity();

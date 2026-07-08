@@ -56,6 +56,8 @@ export class CameraSystem extends System {
 
     resize(world, canvas) {
         // TODO: loop over all existing cameras rather than just the live one?
+        canvas.width = document.body.clientWidth;
+        canvas.height = document.body.clientHeight;
         const cameraId = world.getResource("activeCameraEntity");
         const cameraData = world.pools.Camera.getRaw(cameraId);
         cameraData[0] = canvas.width / Math.max(canvas.height, 1);
