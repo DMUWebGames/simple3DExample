@@ -8,8 +8,6 @@ import { mat4 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js
 export class TransformSystem extends System{ 
 
     constructor() {
-        console.log("!!");
-        
         super({ Transform: null });
     }
     

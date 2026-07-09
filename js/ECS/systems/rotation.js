@@ -3,7 +3,7 @@ import { quat } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js
 
 export class RotationSystem extends System {
     constructor() {
-        super({ Angle: null, Rotation: null });
+        super({ Orientation: null, Rotation: null });
     }
 
     update(world, deltaTime, activeEntities) {
