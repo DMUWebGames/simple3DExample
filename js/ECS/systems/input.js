@@ -19,40 +19,57 @@ export class InputSystem extends System {
         super();
         this.keyMappings = {
             "w": "thrust",
-            "a": "-roll",
+            "a": "rollLeft",
             "s": "break",
-            "d": "+roll",
+            "d": "rollRight",
         }
-        this.controls = {};
+        this.controls = {
+            thrust: false,
+            rollLeft: false,
+            break: false,
+            rollRight: false,
+            pitch: 0,
+            yaw: 0,
+        };
+        this.yawSpeed = 1.5;   // radians per second
+        this.pitchSpeed = 1.2;
+        this.rollSpeed = 1.0;
+
         window.addEventListener("keydown", this.onKeyDown.bind(this));
         window.addEventListener("keyup", this.onKeyUp.bind(this));
         canvas.addEventListener("click", () => {
             if (document.pointerLockElement !== canvas && canvas.requestPointerLock) {
                 canvas.requestPointerLock();
-                this.mouseDelta = { x: 0, y: 0 };
             }
         });
         canvas.addEventListener("mousemove", ev => {
             if (document.pointerLockElement === canvas) {
-                this.mouseDelta.x += ev.movementX;
-                this.mouseDelta.y += ev.movementY;
+                this.controls.yaw = ev.movementX;
+                this.controls.pitch = ev.movementY;
             }
         });
     }
 
+    get rollDelta() { 
+        return this.rollSpeed * (this.controls.rollRight - this.controls.rollLeft); 
+    }
+
+    get pitchDelta() { 
+        return this.pitchSpeed * this.controls.pitch; 
+    }
+
+    get yawDelta() { 
+        return this.yawSpeed * this.controls.yaw; 
+    }
+
     update(world, deltaTime, activeEntities) {
         const playerId = world.getResource("activePlayerEntity");
-        const rpy = world.getComponent(playerId, "RollPitchYaw");
-        const pitch = world.getComponent(playerId, "Pitch");
-        const yaw = world.getComponent(playerId, "Yaw");
-        // console.log(this.mouseDelta);
-        
-
-        // const up = world.getComponent(playerId, "Up");
-        // const right = world.getComponent(playerId, "Right");
-        // const forward = world.getComponent(playerId, "Forward");
-        // console.log(orientation);
-        
+        // const [yaw, pitch, roll] = world.getComponent(playerId, "Input");
+        world.updateComponent(playerId, "Input", [
+            this.yawDelta,
+            this.pitchDelta,
+            this.rollDelta
+        ]);
     }
 
     onKeyDown(ev) { 

@@ -69,7 +69,7 @@ export class Renderer extends System {
 
     update(world, deltaTime, activeEntities) {
 
-        const renderableQuery = world.query(['Position', 'Renderable']);
+        const renderableQuery = world.query(['Transform', 'Renderable']);
         const renderableEntities = renderableQuery.filter(activeEntities, world.signatures);
 
         if (!renderableEntities.length) {
@@ -116,26 +116,13 @@ export class Renderer extends System {
 
         for (const [renderableId, group] of groups) {
            
-            // TODO: It looks like I'm applying the transformations here.
-            // Can it be offloaded to a transformation system?
-            // So I can just load the pre-built buffer here?
-            // Perhaps I want this to be done in a compute shader?
-            // But for now just moving the code out of the way would be nice.
 
             // create an array to hold the transformation data
             const transforms = new Float32Array(group.length * 16);
             for (const i in group) {
                 const entityId = group[i];
-                const position = world.getComponent(entityId, "Position");
-                const orientation = world.getComponent(entityId, "Orientation");
-                const scale = world.getComponent(entityId, "Scale");
-                
-                const oMat = mat4.fromQuat(orientation);
-                const modelMatrix = mat4.multiply(
-                    mat4.translation(position),
-                    mat4.multiply(oMat, mat4.scaling([scale, scale, scale]))
-                );
-                transforms.set(modelMatrix, i * 16);
+                const transform = world.getComponent(entityId, "Transform");
+                transforms.set(transform, i * 16);
             }
 
             // See if we have a buffer already set up
