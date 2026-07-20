@@ -65,22 +65,6 @@ export class SpaceScene {
             }
         });
 
-        // const cubeMaterialId = this.framework.registerResource("cubeMaterial", cubeMaterial);
-        // const asteroidMaterialId = this.framework.registerResource("asteroidMaterial", asteroidMaterial);
-        // const skyBoxMaterialId = this.framework.registerResource("skyBoxMaterial", skyBoxMaterial);
-
-
-        const scripts = [greet, cameraScript]
-        const scriptData = ["world", {
-            yawSpeed: 0.05,
-            pitchSpeed: 0.05,
-            rollSpeed: 1
-        }]
-
-
-        // set up scripts
-        // const scriptResourceId = this.framework.registerResource("scripts", scripts);
-        // const scriptDataId = this.framework.registerResource("scriptData", scriptData);
         
         // Rendering data for Cubes
         const cubeRenderableId = this.framework.registerResource("cube", {
@@ -128,17 +112,12 @@ export class SpaceScene {
 
         window.addEventListener("keydown", ev => {
             const keys = this.framework.getResource("keys");
-            console.log("!!");
-            
             keys[ev.key] = true;
         });
         window.addEventListener("keyup", ev => {
             const keys = this.framework.getResource("keys");
             keys[ev.key] = false;
         });
-
-        // console.log(Array.from(Object.values(randomVector(-size, size))))
-        // exit
 
         new Array(nCubes).fill(0).forEach((_, i) => {
             const id = this.framework.createEntity();
@@ -184,7 +163,7 @@ export class SpaceScene {
         this.framework.addComponent(this.cameraId, "Camera", {
             aspect: 16 / 9,
             near: 0.1,
-            far: this.size,
+            far: this.size*2,
             fov: 60
         });
         this.framework.addComponent(this.cameraId, "Scriptable", [1, 1]);
@@ -204,6 +183,17 @@ export class SpaceScene {
         this.framework.registerResource("activePlayerEntity", this.playerId);
         // this.framework.registerResource("scripts", scriptResourceId);
         // this.framework.registerResource("scriptData", scriptDataId);
+
+
+        // set up scripts
+        const scripts = [greet, cameraScript]
+        const scriptData = ["world", {
+            yawSpeed: 0.05,
+            pitchSpeed: 0.05,
+            rollSpeed: 1,
+            thrust: 10
+        }]
+
 
         // Systems
         // this.framework.addSystem(new InputSystem(canvas));

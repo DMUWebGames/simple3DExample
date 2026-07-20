@@ -3,11 +3,11 @@ import { quat, vec3 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.
 
 const LOCAL_FORWARD = [0, 0, -1];
 
-export function cameraScript({yawSpeed, pitchSpeed, rollSpeed, thrust=1}, { world, entityId, deltaTime }) { 
+export function cameraScript({yawSpeed, pitchSpeed, rollSpeed, thrust}, { world, entityId, deltaTime }) { 
     const orientation = world.getComponent(entityId, "Orientation");
-    
     const mouse = world.getResource("mouse");
     const keys = world.getResource("keys");
+
     const deltaQuat = quat.fromEuler(
         mouse.movementY * pitchSpeed * deltaTime,
         mouse.movementX * yawSpeed * deltaTime,
