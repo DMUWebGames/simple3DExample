@@ -1,4 +1,5 @@
 import { System } from "./base.js";
+import { vec3 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
 
 export class MovementSystem extends System {
     constructor(size) {
@@ -13,15 +14,15 @@ export class MovementSystem extends System {
         for (const entityId of matchingEntities) {
             const position = world.getComponent(entityId, "Position");
             const velocity = world.getComponent(entityId, "Velocity");
-            [0, 1, 2].forEach(i => {
-                position[i] += velocity[i] * deltaTime;
-                if (position[i] > this.size) {
-                    position[i] -= this.size * 2;
-                } else if (position[i] < -this.size) {
-                    position[i] += this.size * 2;
-                }
-            });
-            world.updateComponent(entityId, "Position", position);            
+            vec3.add(
+                position,
+                vec3.mulScalar(velocity, deltaTime),
+                position
+            )
+            if(vec3.length(position) > this.size) {
+                vec3.negate(position, position);
+            }
+            world.updateComponent(entityId, "Position", position);
         }
     }
 }

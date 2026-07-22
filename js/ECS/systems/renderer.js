@@ -9,7 +9,10 @@ const shaders = new Map();
 
 export class Renderer extends System {
     constructor() {
-        super({ Position: { x: 0, y: 0, z: 0 }, Renderable: { mesh: "" }, Orientation: null });
+        super({ 
+            Renderable: 0,
+            Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
+        });
         this.instanceBuffers = new Map();
         this.pipelines = new Map();
         this.depthTexture = null;
@@ -38,7 +41,8 @@ export class Renderer extends System {
                 targets: [{ format }]
             },
             primitive: {
-                topology: "triangle-list"
+                topology: "triangle-list",
+                cullMode: "back"
             },
             depthStencil: {
                 format: "depth24plus",

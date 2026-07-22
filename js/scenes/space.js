@@ -95,7 +95,7 @@ export class SpaceScene {
         this.framework.registerResource("keys", {
             a: false,
             d: false,
-            w: false
+            w: false,
         });
         this.framework.registerResource("mouse", {
             movementX: 0,
@@ -107,11 +107,19 @@ export class SpaceScene {
                 canvas.requestPointerLock();
             }
         });
-        canvas.addEventListener("mousemove", ev => {
+
+        const mouse = this.framework.getResource("mouse");
+
+        function updateMouse(ev) { 
+            mouse.movementX = ev.movementX;
+            mouse.movementY = ev.movementY;
+        }
+
+        document.addEventListener("pointerlockchange", ev => {
             if (document.pointerLockElement === canvas) {
-                const mouse = this.framework.getResource("mouse");
-                mouse.movementX = ev.movementX;
-                mouse.movementY = ev.movementY;
+                canvas.addEventListener("mousemove", updateMouse);
+            } else {
+                canvas.removeEventListener("mousemove", updateMouse);
             }
         });
 

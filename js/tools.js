@@ -12,9 +12,9 @@ export function randomQuat() {
 
 export function randomQuatBetween(min, max) {
     const q = quat.fromEuler(
-        min + Math.random() * (max - min) * Math.PI * 2,
-        min + Math.random() * (max - min) * Math.PI * 2,
-        min + Math.random() * (max - min) * Math.PI * 2,
+        (min + Math.random() * (max - min)) * Math.PI * 2,
+        (min + Math.random() * (max - min)) * Math.PI * 2,
+        (min + Math.random() * (max - min)) * Math.PI * 2,
         "xyz"
     );
     return quat.normalize(q);
