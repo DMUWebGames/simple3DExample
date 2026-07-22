@@ -13,8 +13,8 @@ async function createShader(path, options) {
 
 const asteroidModule = await createShader('shaders/thing.wgsl');
 const cubeModule = await createShader('shaders/cube.wgsl');
-const asteroidTexture = await loadTexture('textures/asteroid.jpg');
-const cubeTexture = await loadTexture('textures/cube.jpg');
+const asteroidTexture = await loadTexture('asteroid.jpg');
+const cubeTexture = await loadTexture('cube.jpg');
 const sampler = device.createSampler();
 
 export default class Scene {
@@ -173,12 +173,6 @@ export default class Scene {
 
         window.addEventListener("resize", this.resize.bind(this));
         window.dispatchEvent(new Event("resize"));
-// const resizeObserver = new ResizeObserver((entries) => {
-//     for (const entry of entries) {
-//         scene.resize(entry);
-//     }
-// });
-// resizeObserver.observe(document.body);
 
 
         // handling user interaction
