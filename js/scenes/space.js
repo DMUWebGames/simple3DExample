@@ -1,3 +1,5 @@
+performance.mark('space-scene-module');
+
 import { EntityFramework } from "../ECS/Framework.js";
 import { CameraSystem } from "../ECS/systems/camera.js";
 import { Renderer } from "../ECS/systems/renderer.js";
@@ -7,7 +9,6 @@ import { MovementSystem } from "../ECS/systems/movement.js";
 import { sphericalVertexBuffer } from "../sphere.js";
 import { RotationSystem } from "../ECS/systems/rotation.js";
 import { LightingSystem } from "../ECS/systems/lighting.js";
-import { InputSystem } from "../ECS/systems/input.js";
 import { randomOrientation, randomQuat, randomQuatBetween } from "../tools.js";
 import { loadTexture } from "../texture.js";
 import { loadMaterial } from "../material.js";
@@ -15,6 +16,7 @@ import { TransformSystem } from "../ECS/systems/transform.js";
 import { ScriptingSystem } from "../ECS/systems/scripts.js";
 import { greet } from "../../scripts/greet.js";
 import { cameraScript } from "../../scripts/camera.js";
+
 
 const randomVector = (min, max) => {
     return {
@@ -34,6 +36,9 @@ const crateMaterial = await loadMaterial("materials/crate.json");
 const asteroidMaterial = await loadMaterial("materials/asteroid.json");
 const skyBoxMaterial = await loadMaterial("materials/skybox.json");
 
+performance.mark('space-scene-assets-loaded');
+performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-assets-loaded');
+
 export class SpaceScene {
     constructor({ size, nCubes, nAsteroids }) {
         performance.mark('start-space-scene');
@@ -43,7 +48,7 @@ export class SpaceScene {
             components: {
                 Position: { x: 0, y: 0, z: 0 },
                 Orientation: randomQuat(),
-                Rotation: randomQuatBetween(),
+                Rotation: randomQuat(),
                 Scale: [1, 1, 1],
                 Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
                 Velocity: { x: 0, y: 0, z: 0 },
@@ -122,14 +127,12 @@ export class SpaceScene {
         new Array(nCubes).fill(0).forEach((_, i) => {
             const id = this.framework.createEntity();
             this.framework.addComponent(id, "Renderable", cubeRenderableId);
-
             this.framework.addComponent(id, "Transform", Array(16).fill(0));
             this.framework.addComponent(id, "Position", randomVector(-size, size));
             this.framework.addComponent(id, "Orientation", randomQuat());
             this.framework.addComponent(id, "Scale", [1, 1, 1]);
-
             this.framework.addComponent(id, "Rotation", randomQuat());
-            this.framework.addComponent(id, "Velocity", randomVector(-5, 5));
+            this.framework.addComponent(id, "Velocity", randomVector(-15, 15));
         });
 
         new Array(nAsteroids).fill(0).forEach((_, i) => {
@@ -138,10 +141,10 @@ export class SpaceScene {
             this.framework.addComponent(id, "Transform", Array(16).fill(0));
             this.framework.addComponent(id, "Position", randomVector(-size, size));
             this.framework.addComponent(id, "Orientation", randomQuat());
-            this.framework.addComponent(id, "Scale", [10, 10, 10]);
-            // this.framework.addComponent(id, "Angle", randomAngle());
-            this.framework.addComponent(id, "Rotation", randomQuat());
-            this.framework.addComponent(id, "Velocity", randomVector(-0.5, 0.5));
+            const asteroidSize = 2 + Math.random() * 8;
+            this.framework.addComponent(id, "Scale", [asteroidSize, asteroidSize, asteroidSize]);
+            this.framework.addComponent(id, "Rotation", randomQuatBetween(-0.1, 0.1));
+            this.framework.addComponent(id, "Velocity", randomVector(-5, 5));
         });
 
         this.background = this.framework.createEntity();
@@ -173,30 +176,21 @@ export class SpaceScene {
         this.framework.addComponent(this.lightId, "Direction", { x: -0.5, y: -1.0, z: 0.3, w: 0 });
         this.framework.addComponent(this.lightId, "Colour", { r: 0.95, g: 0.9, b: 0.3, a: 0 });
 
-        // Player
-        this.playerId = this.framework.createEntity();
-        this.framework.addComponent(this.playerId, "Input", { yaw: 0, pitch: 0, roll: 0 });
-        
         // Register some things for systems to access 
         this.framework.registerResource("activeCameraEntity", this.cameraId);
         this.framework.registerResource("activeLightEntity", this.lightId);
-        this.framework.registerResource("activePlayerEntity", this.playerId);
-        // this.framework.registerResource("scripts", scriptResourceId);
-        // this.framework.registerResource("scriptData", scriptDataId);
-
 
         // set up scripts
         const scripts = [greet, cameraScript]
         const scriptData = ["world", {
-            yawSpeed: 0.05,
-            pitchSpeed: 0.05,
-            rollSpeed: 1,
+            yawSpeed: -0.05,
+            pitchSpeed: -0.05,
+            rollSpeed: 2,
             thrust: 10
         }]
 
 
         // Systems
-        // this.framework.addSystem(new InputSystem(canvas));
         this.framework.addSystem(new ScriptingSystem(scripts, scriptData));
         this.framework.addSystem(new CameraSystem());
         this.framework.addSystem(new MovementSystem(this.size));
@@ -206,6 +200,7 @@ export class SpaceScene {
         this.framework.addSystem(new Renderer());
 
         performance.mark('space-scene-configured');
+        performance.measure('space-scene-initialisation', 'start-space-scene', 'space-scene-configured');
 
     }
 
