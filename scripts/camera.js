@@ -1,21 +1,24 @@
-import { canvas } from "../js/setup.js";
 import { quat, vec3 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
 
 const LOCAL_FORWARD = [0, 0, -1];
+let rollSpeed = 0;
+let yawSpeed = 0;
+let pitchSpeed = 0;
 
-export function cameraScript({yawSpeed, pitchSpeed, rollSpeed, thrust}, { world, entityId, deltaTime }) { 
+export function cameraScript({yawAcc, pitchAcc, rollAcc, thrust, brake}, { world, entityId, deltaTime }) { 
     const orientation = world.getComponent(entityId, "Orientation");
     const mouse = world.getResource("mouse");
     const keys = world.getResource("keys");
 
-    // console.log(mouse);
-    
+    rollSpeed += (keys.d - keys.a) * rollAcc * deltaTime;
+    yawSpeed += mouse.movementX * yawAcc * deltaTime;
+    pitchSpeed += mouse.movementY * pitchAcc * deltaTime;
 
     // calculate the change in orientation based on mouse movement and key presses
     const deltaQuat = quat.fromEuler(
-        mouse.movementY * pitchSpeed * deltaTime,
-        mouse.movementX * yawSpeed * deltaTime,
-        (keys.d - keys.a) * rollSpeed * deltaTime,
+        pitchSpeed * deltaTime,
+        yawSpeed * deltaTime,
+        rollSpeed * deltaTime,
         "xyz"
     );
     quat.normalize(deltaQuat, deltaQuat);
@@ -25,9 +28,9 @@ export function cameraScript({yawSpeed, pitchSpeed, rollSpeed, thrust}, { world,
     quat.normalize(orientation, orientation);
     world.updateComponent(entityId, "Orientation", orientation);
 
-    // calculate the forward acceleration    
+    // calculate the forward acceleration, applying brake and thrust
     const forward = vec3.transformQuat(LOCAL_FORWARD, orientation);
-    vec3.scale(forward, keys.w * thrust * deltaTime, forward);
+    vec3.scale(forward, (keys.w * thrust - keys.s * brake) * deltaTime, forward);
     
     // apply forward acceleration to the camera's velocity
     const velocity = world.getComponent(entityId, "Velocity");

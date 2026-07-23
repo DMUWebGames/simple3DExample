@@ -95,6 +95,7 @@ export class SpaceScene {
             a: false,
             d: false,
             w: false,
+            s: false
         });
         this.framework.registerResource("mouse", {
             movementX: 0,
@@ -139,7 +140,7 @@ export class SpaceScene {
             this.framework.addComponent(id, "Orientation", randomQuat());
             this.framework.addComponent(id, "Scale", [1, 1, 1]);
             this.framework.addComponent(id, "Rotation", randomQuat());
-            this.framework.addComponent(id, "Velocity", randomVector(-15, 15));
+            this.framework.addComponent(id, "Velocity", randomVector(-1, 1));
         });
 
         new Array(nAsteroids).fill(0).forEach((_, i) => {
@@ -190,10 +191,11 @@ export class SpaceScene {
         // set up scripts
         const scripts = [greet, cameraScript]
         const scriptData = ["world", {
-            yawSpeed: -0.05,
-            pitchSpeed: -0.05,
-            rollSpeed: 2,
-            thrust: 10
+            yawAcc: -0.05,
+            pitchAcc: -0.05,
+            rollAcc: -2,
+            thrust: 10,
+            brake: 20
         }]
 
 
