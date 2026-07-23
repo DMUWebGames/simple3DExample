@@ -1,4 +1,5 @@
 {
     "module": "thing.wgsl",
-    "textures": ["asteroid.jpg"]
+    "textures": ["asteroid.jpg"],
+    "cullmode": "front"
 }

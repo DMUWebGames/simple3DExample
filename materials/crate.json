@@ -1,4 +1,5 @@
 {
     "module": "thing.wgsl",
-    "textures": ["crate.jpg"]
+    "textures": ["crate.jpg"],
+    "cullmode": "back"
 }

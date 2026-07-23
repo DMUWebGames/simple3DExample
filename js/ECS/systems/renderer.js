@@ -18,11 +18,11 @@ export class Renderer extends System {
         this.depthTexture = null;
     }
 
-    createPipeline(module) {
+    createPipeline(material) {
         return device.createRenderPipeline({
             layout: "auto",
             vertex: {
-                module: module,
+                module: material.module,
                 entryPoint: "vsMain",
                 buffers: [
                     {
@@ -36,13 +36,13 @@ export class Renderer extends System {
                 ]
             },
             fragment: {
-                module: module,
+                module: material.module,
                 entryPoint: "fsMain",
                 targets: [{ format }]
             },
             primitive: {
                 topology: "triangle-list",
-                cullMode: "none"
+                cullMode: material.cullmode || "none"
             },
             depthStencil: {
                 format: "depth24plus",
@@ -54,13 +54,13 @@ export class Renderer extends System {
         });
     }
 
-    getPipeline(module) {
+    getPipeline(material) {
         
-        if (!this.pipelines.has(module)) {
-            console.log("creating pipeline for", module);
-            this.pipelines.set(module, this.createPipeline(module))
+        if (!this.pipelines.has(material)) {
+            console.log("creating pipeline for", material);
+            this.pipelines.set(material, this.createPipeline(material))
         }
-        return this.pipelines.get(module);
+        return this.pipelines.get(material);
     }
 
     resize() {
@@ -148,7 +148,7 @@ export class Renderer extends System {
             const {vertexBuffer, vertexCount, material} = world.getResourceById(renderableId);
 
             // setup a pipeline
-            const pipeline = this.getPipeline(material.module);
+            const pipeline = this.getPipeline(material);
             
             // bind the data to the pipeline
             const sceneWideBindGroup = device.createBindGroup({
