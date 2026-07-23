@@ -334,21 +334,16 @@ export class EntityFramework {
         const startTime = performance.now();
         const activeEntities = this.entityManager.getActive();
         performance.mark(`${this.constructor.name} update start`);
-
         for (const system of this.systems) {
             performance.mark(`${system.constructor.name} update start`,);
             const systemStart = performance.now();
-
             system.update(this, deltaTime, activeEntities);
-
             performance.mark(`${system.constructor.name} update complete`);
             performance.measure(`${system.constructor.name} update`, `${system.constructor.name} update start`, `${system.constructor.name} update complete`);
-
             this.stats.systemTimes[system.constructor.name] = performance.now() - systemStart;
         }
         performance.mark(`${this.constructor.name} update complete`);
         performance.measure(`${this.constructor.name} update`, `${this.constructor.name} update start`, `${this.constructor.name} update complete`);
-
         this.stats.frameTime = performance.now() - startTime;
         this.stats.entityCount = activeEntities.length;
     }

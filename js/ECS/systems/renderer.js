@@ -42,7 +42,7 @@ export class Renderer extends System {
             },
             primitive: {
                 topology: "triangle-list",
-                cullMode: "back"
+                cullMode: "none"
             },
             depthStencil: {
                 format: "depth24plus",
