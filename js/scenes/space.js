@@ -13,7 +13,6 @@ import { randomQuat, randomQuatBetween } from "../tools.js";
 import { loadMaterial } from "../material.js";
 import { TransformSystem } from "../ECS/systems/transform.js";
 import { ScriptingSystem } from "../ECS/systems/scripts.js";
-import { greet } from "../../scripts/greet.js";
 import { cameraScript } from "../../scripts/camera.js";
 
 
@@ -123,11 +122,11 @@ export class SpaceScene {
             }
         });
 
-        window.addEventListener("keydown", ev => {
+        globalThis.addEventListener("keydown", ev => {
             const keys = this.framework.getResource("keys");
             keys[ev.key] = true;
         });
-        window.addEventListener("keyup", ev => {
+        globalThis.addEventListener("keyup", ev => {
             const keys = this.framework.getResource("keys");
             keys[ev.key] = false;
         });
@@ -177,7 +176,7 @@ export class SpaceScene {
             far: this.size*2,
             fov: 60
         });
-        this.framework.addComponent(this.cameraId, "Scriptable", [1, 1]);
+        this.framework.addComponent(this.cameraId, "Scriptable", [0, 0]);
         
         // Lights
         this.lightId = this.framework.createEntity();
@@ -189,8 +188,8 @@ export class SpaceScene {
         this.framework.registerResource("activeLightEntity", this.lightId);
 
         // set up scripts
-        const scripts = [greet, cameraScript]
-        const scriptData = ["world", {
+        const scripts = [cameraScript]
+        const scriptData = [{
             yawAcc: -0.05,
             pitchAcc: -0.05,
             rollAcc: -2,

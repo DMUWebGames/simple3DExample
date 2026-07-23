@@ -1,35 +1,34 @@
-import { canvas } from "./js/setup.js";
-import Scene from "./js/scene.js";
-import Asteroid from "./js/asteroid.js";
-import { Cube } from "./js/cube.js";
+import { SpaceScene } from "./js/scenes/space.js";
 
-// size of the world
-const radius = 1000000;
-
-// Minimum speed of things, how long they take to cross the world
-const maxCrossTimeInSeconds = 10000;
-
-// Size of things
-const asteroidSize = 1000;
-const cubeSize = 20000;
-
-// Number of things
-const nAsteroids = 20000;
-const nCubes = 10;
-
-// resolution of the thing vetices
-const segmentCount = 16;
-
-// Create things and add them to the scene
-const things = Array.from({length: nAsteroids}, () => Asteroid.random({radius, maxCrossTimeInSeconds, size: asteroidSize}));
-
-const cubes = Array.from({length: nCubes}, (_, i) => {
-    return Cube.random({radius, maxCrossTimeInSeconds, size: cubeSize});
+const scene = new SpaceScene({
+    size: 500,
+    nCubes: 10000,
+    nAsteroids: 1000
 });
-
-const scene = new Scene(radius, things, cubes, segmentCount);
-
+globalThis.scene = scene;
+globalThis.addEventListener("resize", () => scene.resize());
+globalThis.dispatchEvent(new Event("resize"))
 scene.animate();
 
-window.scene = scene;
-window.canvas = canvas;
+const stats = new Map();
+const n = 1000;
+
+function perfObserver(list, observer) {
+    list.getEntries().forEach((entry) => {
+        const values = stats.getOrInsert(entry.name, [])
+        // console.log(values.length);
+        
+        values.push(entry.duration);
+        if (values.length >= n) {
+            const total = values.reduce((p, c) => p + c, 0);
+            // console.log("max", Math.max(...values));
+            console.log(`${entry.name} average`, total / values.length);
+            // console.log("min", Math.min(...values));
+            stats.delete(entry.name);
+        }
+  });
+}
+const observer = new PerformanceObserver(perfObserver);
+observer.observe({
+  entryTypes: ["measure"], 
+});
