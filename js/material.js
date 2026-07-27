@@ -1,17 +1,5 @@
 import { loadTexture } from "./texture.js";
-import { device } from "./setup.js";
-
-const shaders = new Map();
-
-async function createShader(path) {
-    const response = await fetch(`./shaders/${path}`);
-    const code = await response.text();
-    if (!shaders.has(path)) {
-        const module = device.createShaderModule({ code, label: path });
-        shaders.set(path, module);
-    }
-    return shaders.get(path);
-}
+import { createShader } from "./shader.js";
 
 export async function loadMaterial(url) { 
     const res = await fetch(url);
