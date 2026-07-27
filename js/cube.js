@@ -60,6 +60,7 @@ export const cubeVertices = new Float32Array([
 
 export function cubeVertexBuffer(device) {
     const vertexBuffer = mappedBuffer(device, cubeVertices, {
+        label: "cube vertices",
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
     return [vertexBuffer, cubeVertices.length / 8];

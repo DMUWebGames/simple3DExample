@@ -228,6 +228,7 @@ export class EntityFramework {
         this.pools = {};
         this.systems = [];
         this.resources = new ResourceRegistry();
+        this.GPUBuffers = new ResourceRegistry();
 
         // Register components from config
         if (config.components) {
@@ -249,6 +250,18 @@ export class EntityFramework {
         this.pools[name] = new TypedComponentPool(this.maxEntities, 
             this.componentRegistry.get(name));
         return bit;
+    }
+
+    registerGPUBuffer(name, resource) {
+        return this.GPUBuffers.set(name, resource);
+    }
+
+    getGPUBuffer(name) {
+        return this.GPUBuffers.get(name) ?? null;
+    }
+
+    getOrRegisterGPUBuffer(name, callback) {
+        return this.GPUBuffers.getOrInitialise(name, callback);
     }
 
     registerResource(name, resource) {
@@ -426,5 +439,15 @@ class ResourceRegistry {
 
     indexOf(name) {
         return this.names.indexOf(name);
+    }
+
+    getOrInitialise(name, callback) {
+        const resource = this.get(name);
+        if(!resource) {
+            const newResource = callback();
+            this.set(name, newResource);
+            return newResource;
+        }
+        return resource;
     }
 }

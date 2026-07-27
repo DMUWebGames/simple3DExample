@@ -41,7 +41,7 @@ export class SpaceScene {
     constructor({ size, nCubes, nAsteroids }) {
         performance.mark('start-space-scene');
         this.size = size;
-        this.framework = new EntityFramework({
+        this.world = new EntityFramework({
             maxEntities: nCubes + nAsteroids + 1 + 1 + 1 + 1,
             components: {
                 Position: { x: 0, y: 0, z: 0 },
@@ -70,33 +70,33 @@ export class SpaceScene {
 
         
         // Rendering data for Cubes
-        const cubeRenderableId = this.framework.registerResource("cube", {
+        const cubeRenderableId = this.world.registerResource("cube", {
             vertexBuffer: cubeBuffer,
             vertexCount: cubeVertexCount,
             material: crateMaterial
         });
 
         // Rendering data for Asteroids
-        const asteroidRenderableId = this.framework.registerResource("asteroid", {
+        const asteroidRenderableId = this.world.registerResource("asteroid", {
             vertexBuffer: sphereBuffer,
             vertexCount: sphereVertexCount,
             material: asteroidMaterial
         });
 
         // Rendering data for the background
-        const skyBoxRenderableId = this.framework.registerResource("background", {
+        const skyBoxRenderableId = this.world.registerResource("background", {
             vertexBuffer: sphereBuffer,
             vertexCount: sphereVertexCount,
             material: skyBoxMaterial
         });
 
-        this.framework.registerResource("keys", {
+        this.world.registerResource("keys", {
             a: false,
             d: false,
             w: false,
             s: false
         });
-        this.framework.registerResource("mouse", {
+        this.world.registerResource("mouse", {
             movementX: 0,
             movementY: 0
         });
@@ -107,7 +107,7 @@ export class SpaceScene {
             }
         });
 
-        const mouse = this.framework.getResource("mouse");
+        const mouse = this.world.getResource("mouse");
 
         function updateMouse(ev) { 
             mouse.movementX = ev.movementX;
@@ -123,69 +123,69 @@ export class SpaceScene {
         });
 
         globalThis.addEventListener("keydown", ev => {
-            const keys = this.framework.getResource("keys");
+            const keys = this.world.getResource("keys");
             keys[ev.key] = true;
         });
         globalThis.addEventListener("keyup", ev => {
-            const keys = this.framework.getResource("keys");
+            const keys = this.world.getResource("keys");
             keys[ev.key] = false;
         });
 
         new Array(nCubes).fill(0).forEach((_, i) => {
-            const id = this.framework.createEntity();
-            this.framework.addComponent(id, "Renderable", cubeRenderableId);
-            this.framework.addComponent(id, "Transform", Array(16).fill(0));
-            this.framework.addComponent(id, "Position", randomVector(-size, size));
-            this.framework.addComponent(id, "Orientation", randomQuat());
-            this.framework.addComponent(id, "Scale", [1, 1, 1]);
-            this.framework.addComponent(id, "Rotation", randomQuat());
-            this.framework.addComponent(id, "Velocity", randomVector(-1, 1));
+            const id = this.world.createEntity();
+            this.world.addComponent(id, "Renderable", cubeRenderableId);
+            this.world.addComponent(id, "Transform", Array(16).fill(0));
+            this.world.addComponent(id, "Position", randomVector(-size, size));
+            this.world.addComponent(id, "Orientation", randomQuat());
+            this.world.addComponent(id, "Scale", [1, 1, 1]);
+            this.world.addComponent(id, "Rotation", randomQuat());
+            this.world.addComponent(id, "Velocity", randomVector(-1, 1));
         });
 
         new Array(nAsteroids).fill(0).forEach((_, i) => {
-            const id = this.framework.createEntity();
-            this.framework.addComponent(id, "Renderable", asteroidRenderableId);
-            this.framework.addComponent(id, "Transform", Array(16).fill(0));
-            this.framework.addComponent(id, "Position", randomVector(-size, size));
-            this.framework.addComponent(id, "Orientation", randomQuat());
+            const id = this.world.createEntity();
+            this.world.addComponent(id, "Renderable", asteroidRenderableId);
+            this.world.addComponent(id, "Transform", Array(16).fill(0));
+            this.world.addComponent(id, "Position", randomVector(-size, size));
+            this.world.addComponent(id, "Orientation", randomQuat());
             const asteroidSize = 2 + Math.random() * 8;
-            this.framework.addComponent(id, "Scale", [asteroidSize, asteroidSize, asteroidSize]);
-            this.framework.addComponent(id, "Rotation", randomQuatBetween(-0.1, 0.1));
-            this.framework.addComponent(id, "Velocity", randomVector(-5, 5));
+            this.world.addComponent(id, "Scale", [asteroidSize, asteroidSize, asteroidSize]);
+            this.world.addComponent(id, "Rotation", randomQuatBetween(-0.1, 0.1));
+            this.world.addComponent(id, "Velocity", randomVector(-5, 5));
         });
 
-        this.background = this.framework.createEntity();
-        this.framework.addComponent(this.background, "Renderable", skyBoxRenderableId);
-        this.framework.addComponent(this.background, "Transform", Array(16).fill(0));
-        this.framework.addComponent(this.background, "Position", { x: 0, y: 0, z: 0 });
-        this.framework.addComponent(this.background, "Orientation", randomQuat());
-        this.framework.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
+        this.background = this.world.createEntity();
+        this.world.addComponent(this.background, "Renderable", skyBoxRenderableId);
+        this.world.addComponent(this.background, "Transform", Array(16).fill(0));
+        this.world.addComponent(this.background, "Position", { x: 0, y: 0, z: 0 });
+        this.world.addComponent(this.background, "Orientation", randomQuat());
+        this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
 
         // Camera
         // TODO: is camera position determined by some other factors?
         // e.g. the camera could be placed at different locations based on other game state?
-        this.cameraId = this.framework.createEntity();
-        this.framework.addComponent(this.cameraId, "Position", { x: 0, y: 0, z: 0 });
-        this.framework.addComponent(this.cameraId, "Orientation", randomQuat());
+        this.cameraId = this.world.createEntity();
+        this.world.addComponent(this.cameraId, "Position", { x: 0, y: 0, z: 0 });
+        this.world.addComponent(this.cameraId, "Orientation", randomQuat());
         // this.framework.addComponent(this.cameraId, "Rotation", randomQuat());
-        this.framework.addComponent(this.cameraId, "Velocity", [0, 0, 0]);
+        this.world.addComponent(this.cameraId, "Velocity", [0, 0, 0]);
 
-        this.framework.addComponent(this.cameraId, "Camera", {
+        this.world.addComponent(this.cameraId, "Camera", {
             aspect: 16 / 9,
             near: 0.1,
             far: this.size*2,
             fov: 60
         });
-        this.framework.addComponent(this.cameraId, "Scriptable", [0, 0]);
+        this.world.addComponent(this.cameraId, "Scriptable", [0, 0]);
         
         // Lights
-        this.lightId = this.framework.createEntity();
-        this.framework.addComponent(this.lightId, "Direction", { x: -0.5, y: -1.0, z: 0.3, w: 0 });
-        this.framework.addComponent(this.lightId, "Colour", { r: 0.95, g: 0.9, b: 0.3, a: 0 });
+        this.lightId = this.world.createEntity();
+        this.world.addComponent(this.lightId, "Direction", { x: -0.5, y: -1.0, z: 0.3, w: 0 });
+        this.world.addComponent(this.lightId, "Colour", { r: 0.95, g: 0.9, b: 0.8, a: 0 });
 
         // Register some things for systems to access 
-        this.framework.registerResource("activeCameraEntity", this.cameraId);
-        this.framework.registerResource("activeLightEntity", this.lightId);
+        this.world.registerResource("activeCameraEntity", this.cameraId);
+        this.world.registerResource("activeLightEntity", this.lightId);
 
         // set up scripts
         const scripts = [cameraScript]
@@ -199,13 +199,13 @@ export class SpaceScene {
 
 
         // Systems
-        this.framework.addSystem(new ScriptingSystem(scripts, scriptData));
-        this.framework.addSystem(new CameraSystem());
-        this.framework.addSystem(new MovementSystem(this.size));
-        this.framework.addSystem(new RotationSystem());
-        this.framework.addSystem(new LightingSystem());
-        this.framework.addSystem(new TransformSystem());
-        this.framework.addSystem(new Renderer());
+        this.world.addSystem(new ScriptingSystem(scripts, scriptData));
+        this.world.addSystem(new CameraSystem());
+        this.world.addSystem(new MovementSystem(this.size));
+        this.world.addSystem(new RotationSystem());
+        this.world.addSystem(new LightingSystem());
+        this.world.addSystem(new TransformSystem());
+        this.world.addSystem(new Renderer());
 
         performance.mark('space-scene-configured');
         performance.measure('space-scene-initialisation', 'start-space-scene', 'space-scene-configured');
@@ -213,21 +213,29 @@ export class SpaceScene {
     }
 
     resize() {
-        this.framework.systems.forEach(system => {
+        this.world.systems.forEach(system => {
             if ("resize" in system) {                
-                system.resize(this.framework, canvas)
+                system.resize(this.world, canvas)
             }
         });
     }
 
     animate() { 
+        // initialise?
+        this.world.registerGPUBuffer("deltaTime", device.createBuffer({
+            label: "deltaTime buffer",
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        }));
         requestAnimationFrame(this.frame.bind(this));
     }
 
     frame(ts) {
         const deltaTime = ts - (this.prevTime || ts);
         this.prevTime = ts;
-        this.framework.update(deltaTime / 1000);
+        const deltaTimeBuffer = this.world.getGPUBuffer("deltaTime");
+        device.queue.writeBuffer(deltaTimeBuffer, 0, new Float32Array([deltaTime / 1000]));
+        this.world.update(deltaTime / 1000);
         requestAnimationFrame(this.frame.bind(this));
     }
 }

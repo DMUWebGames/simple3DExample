@@ -44,6 +44,7 @@ export function sphericalVertices(segmentCount, size, simple) {
 export function sphericalVertexBuffer(device, segments, size, simple=false) {
     const vertices = sphericalVertices(segments, size, simple);
     const vertexBuffer = mappedBuffer(device, vertices, {
+        label: "sphere vertices",
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,        
     });
     return [vertexBuffer, vertices.length / (simple? 6 : 8)];

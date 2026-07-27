@@ -1,7 +1,7 @@
 import { System } from "./base.js";
 import { device, format, ctx, canvas } from "../../setup.js";
-import { Light } from "../../light.js";
-import { mat4 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
+// import { Light } from "../../light.js";
+// import { mat4 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
 
 const sampler = device.createSampler();
 
@@ -84,12 +84,21 @@ export class Renderer extends System {
     }
 
     update(world, deltaTime, activeEntities) {
-
+        const transformBuffer = world.getGPUBuffer('transforms');
         const renderableQuery = world.query(['Transform', 'Renderable']);
         const renderableEntities = renderableQuery.filter(activeEntities, world.signatures);
 
         if (!renderableEntities.length) {
             console.log("nothing to render");
+            return;
+        }        
+
+        // Create a group of entities per mesh (renderable[0] is the mesh resourceId)
+        const groups = Map.groupBy(renderableEntities, (entityId) => {
+            return world.getComponent(entityId, "Renderable")[0];
+        });
+
+        if (!groups.size) {
             return;
         }
 
@@ -104,6 +113,8 @@ export class Renderer extends System {
             console.log("no light buffer found");
             return;
         }
+
+
 
         const encoder = device.createCommandEncoder();
 
@@ -121,51 +132,62 @@ export class Renderer extends System {
             }
         });
 
-        // Create a group of entities per mesh (renderable[0] is the mesh resourceId)
-        const groups = Map.groupBy(renderableEntities, (entityId) => {
-            return world.getComponent(entityId, "Renderable")[0];
-        });
-
-        if (!groups.size) {
-            return;
-        }
-
         for (const [renderableId, group] of groups) {
+            const indexBuffer = world.getOrRegisterGPUBuffer(`transformIndices_${renderableId}`, () => {
+                const groupData = new Uint32Array(group);
+                const buffer = device.createBuffer({
+                    label: `transformIndices_${renderableId}`,
+                    size: groupData.byteLength,
+                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+                });
+                device.queue.writeBuffer(buffer, 0, groupData);               
+                return buffer;
+            });
 
             // load the transform data into a buffer
-            const transforms = world.exportComponentData("Transform", group);
-            const instanceBuffer = this.getInstanceBuffer(renderableId, transforms);
-            device.queue.writeBuffer(instanceBuffer, 0, transforms);
+            // const transforms = world.exportComponentData("Transform", group);
+            // const instanceBuffer = this.getInstanceBuffer(renderableId, transforms);
+            // device.queue.writeBuffer(instanceBuffer, 0, transforms);
             
             // load the renderable
             const {vertexBuffer, vertexCount, material} = world.getResourceById(renderableId);
 
             // setup a pipeline
             const pipeline = this.getPipeline(material);
-            
-            // bind the instance, camera and light data to the pipeline
-            const sceneWideBindGroup = device.createBindGroup({
+
+            // bind instances
+            const instanceBindGroup = device.createBindGroup({
                 layout: pipeline.getBindGroupLayout(0),
                 entries: [
-                    { binding: 0, resource: { buffer: instanceBuffer } },
-                    { binding: 1, resource: { buffer: cameraBuffer } },
-                    { binding: 2, resource: { buffer: lightBuffer } },
-                    { binding: 3, resource: sampler },
+                    { binding: 0, resource: { buffer: indexBuffer } },
+                    { binding: 1, resource: { buffer: transformBuffer } },
+                ]
+            });
+
+            // bind the instance, camera and light data to the pipeline
+            const sceneWideBindGroup = device.createBindGroup({
+                layout: pipeline.getBindGroupLayout(1),
+                entries: [
+                    // { binding: 0, resource: { buffer: instanceBuffer } },
+                    { binding: 0, resource: { buffer: cameraBuffer } },
+                    { binding: 1, resource: { buffer: lightBuffer } },
+                    { binding: 2, resource: sampler },
                 ]
             });
             
             // bind the material textures to the pipeline
             const textureBindGroup = device.createBindGroup({
-                layout: pipeline.getBindGroupLayout(1),
-                entries: material.textures.map(t => {
-                    return { binding: 0, resource: t }
+                layout: pipeline.getBindGroupLayout(2),
+                entries: material.textures.map((t, i) => {
+                    return { binding: i, resource: t }
                 })
             });
 
             // Setup the render pass and draw the mesh with the instance data
             renderPass.setPipeline(pipeline);
-            renderPass.setBindGroup(0, sceneWideBindGroup);
-            renderPass.setBindGroup(1, textureBindGroup);
+            renderPass.setBindGroup(0, instanceBindGroup);
+            renderPass.setBindGroup(1, sceneWideBindGroup);
+            renderPass.setBindGroup(2, textureBindGroup);
             renderPass.setVertexBuffer(0, vertexBuffer);
             renderPass.draw(vertexCount, group.length, 0, 0);
         }

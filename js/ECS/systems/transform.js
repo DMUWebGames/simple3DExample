@@ -1,21 +1,74 @@
 import { System } from "./base.js";
 import { mat4 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
-
+import { createShader } from "../../shader.js";
+import { device } from "../../setup.js";
 
 // TODO: Perhaps I want this to be done in a compute shader?
 
+const transformShader = await createShader("transform.wgsl");
 
 export class TransformSystem extends System{ 
 
     constructor() {
         super({ Transform: null });
+        this.pipeline = device.createComputePipeline({
+            layout: "auto",
+            compute: {
+                module: transformShader,
+                entryPoint: "main"
+            }
+        });
     }
-    
-    update(world, deltaTime, activeEntities) { 
-        const query = world.query(["Position", "Scale", "Orientation", "Transform"]);
+
+    createComponentBuffer(world, component, activeEntities) {
+        const query = world.query(['Position', 'Scale', 'Orientation', 'Transform']);
         const matchingEntities = query.filter(activeEntities, world.signatures);
-        
-        for (const entityId in matchingEntities) {
+        this.entityCount = matchingEntities.length;
+        const instances = world.exportComponentData(component, matchingEntities);
+        return device.createBuffer({
+            label: `${component} instances`,
+            size: instances.byteLength,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+        });            
+    }
+
+    update(world, deltaTime, activeEntities) { 
+        const positionBuffer = world.getGPUBuffer("positions");
+        const orientationBuffer = world.getGPUBuffer("orientations");
+        const scaleBuffer = world.getOrRegisterGPUBuffer("scales", () => this.createComponentBuffer(world, "Scale", activeEntities));
+        const transformBuffer = world.getOrRegisterGPUBuffer("transforms", () => this.createComponentBuffer(world, "Transform", activeEntities));       
+
+        const bindgroup = device.createBindGroup({
+            layout: this.pipeline.getBindGroupLayout(0),
+            entries: [
+                { binding: 0, resource: { buffer: positionBuffer } },
+                { binding: 1, resource: { buffer: orientationBuffer } },
+                { binding: 2, resource: { buffer: scaleBuffer } },
+                { binding: 3, resource: { buffer: transformBuffer } }
+            ]
+        });
+
+        const encoder = device.createCommandEncoder();
+        const pass = encoder.beginComputePass({
+            label: "transform system"
+        });
+
+        pass.setPipeline(this.pipeline);
+        pass.setBindGroup(0, bindgroup);
+        pass.dispatchWorkgroups(Math.ceil(this.entityCount / 64));
+        pass.end();
+
+        device.queue.submit([encoder.finish()]);
+
+
+        // const query = world.query(["Position", "Scale", "Orientation", "Transform"]);
+        // const matchingEntities = query.filter(activeEntities, world.signatures);
+        // this.updateCPU(world, deltaTime, matchingEntities);
+    }
+
+    updateCPU(world, deltaTime, matchingEntities) {
+        // CPU version
+        for (const entityId of matchingEntities) {
             const transform = world.getComponent(entityId, "Transform");
             const position = world.getComponent(entityId, "Position");
             const orientation = world.getComponent(entityId, "Orientation");
