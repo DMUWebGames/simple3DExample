@@ -18,6 +18,18 @@ export class Renderer extends System {
         this.depthTexture = null;
     }
 
+    getInstanceBuffer(renderableId, instances) {
+        let instanceBuffer = this.instanceBuffers.get(renderableId);
+        if (!instanceBuffer) {
+            instanceBuffer = device.createBuffer({
+                size: instances.byteLength,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+            });
+            this.instanceBuffers.set(renderableId, instanceBuffer);
+        }
+        return instanceBuffer;
+    }
+
     createPipeline(material) {
         return device.createRenderPipeline({
             layout: "auto",
@@ -119,29 +131,10 @@ export class Renderer extends System {
         }
 
         for (const [renderableId, group] of groups) {
-           
 
-            // create an array to hold the transformation data
-            const transforms = new Float32Array(group.length * 16);
-            for (const i in group) {
-                const entityId = group[i];
-                const transform = world.getComponent(entityId, "Transform");
-                transforms.set(transform, i * 16);
-            }
-
-            // See if we have a buffer already set up
-            let instanceBuffer = this.instanceBuffers.get(renderableId);
-            
-            // create or expand the buffer as necessary
-            if (!instanceBuffer || instanceBuffer.size < transforms.byteLength) {
-                instanceBuffer = device.createBuffer({
-                    size: transforms.byteLength,
-                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-                });
-                // so we can reuse buffers
-                this.instanceBuffers.set(renderableId, instanceBuffer);
-            }
-            // write the data to the buffer
+            // load the transform data into a buffer
+            const transforms = world.exportComponentData("Transform", group);
+            const instanceBuffer = this.getInstanceBuffer(renderableId, transforms);
             device.queue.writeBuffer(instanceBuffer, 0, transforms);
             
             // load the renderable
@@ -150,7 +143,7 @@ export class Renderer extends System {
             // setup a pipeline
             const pipeline = this.getPipeline(material);
             
-            // bind the data to the pipeline
+            // bind the instance, camera and light data to the pipeline
             const sceneWideBindGroup = device.createBindGroup({
                 layout: pipeline.getBindGroupLayout(0),
                 entries: [
@@ -161,13 +154,15 @@ export class Renderer extends System {
                 ]
             });
             
+            // bind the material textures to the pipeline
             const textureBindGroup = device.createBindGroup({
                 layout: pipeline.getBindGroupLayout(1),
                 entries: material.textures.map(t => {
                     return { binding: 0, resource: t }
                 })
             });
-            
+
+            // Setup the render pass and draw the mesh with the instance data
             renderPass.setPipeline(pipeline);
             renderPass.setBindGroup(0, sceneWideBindGroup);
             renderPass.setBindGroup(1, textureBindGroup);

@@ -193,8 +193,8 @@ export class SpaceScene {
             yawAcc: -0.05,
             pitchAcc: -0.05,
             rollAcc: -2,
-            thrust: 10,
-            brake: 20
+            thrust: this.size / 100,
+            brake: this.size / 100
         }]
 
 
