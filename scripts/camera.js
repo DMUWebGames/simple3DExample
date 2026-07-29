@@ -5,10 +5,17 @@ let rollSpeed = 0;
 let yawSpeed = 0;
 let pitchSpeed = 0;
 
-export function cameraScript({yawAcc, pitchAcc, rollAcc, thrust, brake}, { world, entityId, deltaTime }) { 
+export function cameraScript({ yawAcc, pitchAcc, rollAcc, thrust, brake }, ctx) { 
+
+    
+    const { world, misc, entityId, deltaTime, input } = ctx;
+ 
+    const cameraId = misc.get("activeCameraEntity");
+    if (entityId !== cameraId) return;
+
     const orientation = world.getComponent(entityId, "Orientation");
-    const mouse = world.getResource("mouse");
-    const keys = world.getResource("keys");
+    const mouse = input.get("mouse");
+    const keys = input.get("keys");
 
     rollSpeed += (keys.d - keys.a) * rollAcc * deltaTime;
     yawSpeed += mouse.movementX * yawAcc * deltaTime;

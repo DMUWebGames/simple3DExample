@@ -49,7 +49,7 @@ fn vsMain(@builtin(instance_index) instanceIndex: u32, input: VertexInput) -> Ve
     let transformIndex = transformIndices[instanceIndex];
     let transform = transforms[transformIndex];
     let worldPos = transform * vec4<f32>(input.position, 1.0);
-    // let worldPos = vec4<f32>(input.position, 1.0);
+
     output.position = camera.projMatrix * camera.viewMatrix * worldPos;
     output.uv = input.uv;
     output.normal = normalize((transform * vec4<f32>(input.normal, 0.0)).xyz);
@@ -67,10 +67,11 @@ fn fsMain(input: VertexOutput) -> @location(0) vec4<f32> {
     let R = reflect(-L, N);
     
     // Phong lighting
-    let ambient = 0.1;
+    let ambient = 0.2;
     let diffuse = max(dot(N, L), 0.0);
     let specular = pow(max(dot(R, V), 0.0), 16.0) * 0.65;
     let lighting = ambient + diffuse + specular;
-    // return vec4<f32>(1,0,1,1);
+
     return textureColor * vec4<f32>(light.color.r * lighting, light.color.g * lighting, light.color.b * lighting, 1.0);
+
 }

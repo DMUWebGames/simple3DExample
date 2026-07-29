@@ -22,22 +22,20 @@ export class RotationSystem extends System {
         const matchingEntities = query.filter(activeEntities, world.signatures);
         this.entityCount = matchingEntities.length;
         const instances = world.exportComponentData(component, matchingEntities);
-        return device.createBuffer({
+        const buffer = device.createBuffer({
             label: `${component} instances`,
             size: instances.byteLength,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        });            
+        });
+        device.queue.writeBuffer(buffer, 0, instances);               
+        return buffer;
     }
 
 
-    update(world, deltaTime, activeEntities) {
-        const orientationBuffer = world.getOrRegisterGPUBuffer("orientations", () => {
-            return this.createComponentBuffer(world, "Orientation", activeEntities);
-        });
-        const rotationBuffer = world.getOrRegisterGPUBuffer("rotations", () => {
-            return this.createComponentBuffer(world, "Rotation", activeEntities);
-        });
-        const deltaTimeBuffer = world.getGPUBuffer("deltaTime");
+    update({world, buffers}) {
+        const orientationBuffer = buffers.get("Orientation");
+        const rotationBuffer = buffers.get("Rotation");
+        const deltaTimeBuffer = buffers.get("deltaTime");
 
         // const pipeline = this.pipeline;
         const bindgroup = device.createBindGroup({
@@ -56,7 +54,7 @@ export class RotationSystem extends System {
 
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, bindgroup);
-        pass.dispatchWorkgroups(Math.ceil(this.entityCount / 64));
+        pass.dispatchWorkgroups(Math.ceil(world.maxEntities / 64));
         pass.end();
 
         device.queue.submit([encoder.finish()]);
@@ -74,7 +72,5 @@ export class RotationSystem extends System {
         //     world.updateComponent(entityId, "Orientation", newOrientation);
         // }
     }
-
-    resize() { }
 }
 

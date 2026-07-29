@@ -1,9 +1,9 @@
 import { SpaceScene } from "./js/scenes/space.js";
 
 const scene = new SpaceScene({
-    size: 500,
-    nCubes: 2000,
-    nAsteroids: 200
+    size: 5000,
+    nCubes: 2,
+    nAsteroids: 2
 });
 globalThis.scene = scene;
 globalThis.addEventListener("resize", () => scene.resize());
@@ -13,15 +13,22 @@ scene.animate();
 const stats = new Map();
 const n = 1000;
 
-const observer = new PerformanceObserver((list, observer) => {
+function perfObserver(list, observer) {
     list.getEntries().forEach((entry) => {
         const values = stats.getOrInsert(entry.name, [])
+        // console.log(values.length);
+        
         values.push(entry.duration);
         if (values.length >= n) {
             const total = values.reduce((p, c) => p + c, 0);
-            console.log(`${entry.name} average (${values.length})`, total / values.length);
+            // console.log("max", Math.max(...values));
+            console.log(`${entry.name} average`, total / values.length);
+            // console.log("min", Math.min(...values));
             stats.delete(entry.name);
         }
   });
+}
+const observer = new PerformanceObserver(perfObserver);
+observer.observe({
+  entryTypes: ["measure"], 
 });
-observer.observe({ entryTypes: ["measure"] });

@@ -8,27 +8,27 @@ const sampler = device.createSampler();
 const shaders = new Map();
 
 export class Renderer extends System {
-    constructor() {
+    constructor(renderables) {
         super({ 
             Renderable: 0,
             Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
         });
-        this.instanceBuffers = new Map();
+        this.renderables = renderables;
         this.pipelines = new Map();
         this.depthTexture = null;
     }
 
-    getInstanceBuffer(renderableId, instances) {
-        let instanceBuffer = this.instanceBuffers.get(renderableId);
-        if (!instanceBuffer) {
-            instanceBuffer = device.createBuffer({
-                size: instances.byteLength,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-            });
-            this.instanceBuffers.set(renderableId, instanceBuffer);
-        }
-        return instanceBuffer;
-    }
+    // getInstanceBuffer(renderableId, instances) {
+    //     let instanceBuffer = this.instanceBuffers.get(renderableId);
+    //     if (!instanceBuffer) {
+    //         instanceBuffer = device.createBuffer({
+    //             size: instances.byteLength,
+    //             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+    //         });
+    //         this.instanceBuffers.set(renderableId, instanceBuffer);
+    //     }
+    //     return instanceBuffer;
+    // }
 
     createPipeline(material) {
         return device.createRenderPipeline({
@@ -83,32 +83,36 @@ export class Renderer extends System {
         });
     }
 
-    update(world, deltaTime, activeEntities) {
-        const transformBuffer = world.getGPUBuffer('transforms');
-        const renderableQuery = world.query(['Transform', 'Renderable']);
-        const renderableEntities = renderableQuery.filter(activeEntities, world.signatures);
+    update({ world, activeEntities, buffers, renderables }) {
 
-        if (!renderableEntities.length) {
-            console.log("nothing to render");
-            return;
-        }        
+        
+        const transformBuffer = buffers.get('Transform');
+        // const renderableQuery = world.query(['Transform', 'Renderable']);
+        // const renderableEntities = renderableQuery.filter(activeEntities, world.signatures);
+
+        // if (!renderableEntities.length) {
+        //     console.log("nothing to render");
+        //     return;
+        // }
 
         // Create a group of entities per mesh (renderable[0] is the mesh resourceId)
-        const groups = Map.groupBy(renderableEntities, (entityId) => {
-            return world.getComponent(entityId, "Renderable")[0];
-        });
+        // const groups = Map.groupBy(renderableEntities, (entityId) => {
+        //     return world.getComponent(entityId, "Renderable")[0];
+        // });
 
-        if (!groups.size) {
-            return;
-        }
+        // if (!groups.size) {
+        //     return;
+        // }
 
-        const cameraBuffer = world.getResource("activeCameraBuffer");
+        const cameraBuffer = buffers.get("camera");
+        //const cameraBuffer = world.getResource("activeCameraBuffer");
         if (!cameraBuffer) {
             console.log("no camera buffer found");
             return;
         }
 
-        const lightBuffer = world.getResource("activeLightBuffer");
+        const lightBuffer = buffers.get("phongLight");
+            // world.getResource("activeLightBuffer");
         if (!lightBuffer) {
             console.log("no light buffer found");
             return;
@@ -132,29 +136,19 @@ export class Renderer extends System {
             }
         });
 
-        for (const [renderableId, group] of groups) {
-            const indexBuffer = world.getOrRegisterGPUBuffer(`transformIndices_${renderableId}`, () => {
-                const groupData = new Uint32Array(group);
-                const buffer = device.createBuffer({
-                    label: `transformIndices_${renderableId}`,
-                    size: groupData.byteLength,
-                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-                });
-                device.queue.writeBuffer(buffer, 0, groupData);               
-                return buffer;
-            });
-
-            // load the transform data into a buffer
-            // const transforms = world.exportComponentData("Transform", group);
-            // const instanceBuffer = this.getInstanceBuffer(renderableId, transforms);
-            // device.queue.writeBuffer(instanceBuffer, 0, transforms);
-            
-            // load the renderable
-            const {vertexBuffer, vertexCount, material} = world.getResourceById(renderableId);
+        // console.log(buffers);
+        
+        for (const { id, name, resource } of renderables) {
+            // this is too much coupling to the scene
+            const bufferKey = `renderableIndices_${id}`;
+            const indexBuffer = buffers.get(bufferKey);
+            const { vertexBuffer, vertexCount, material } = resource;            
 
             // setup a pipeline
             const pipeline = this.getPipeline(material);
 
+            // console.log(indexBuffer);
+            
             // bind instances
             const instanceBindGroup = device.createBindGroup({
                 layout: pipeline.getBindGroupLayout(0),
@@ -189,7 +183,7 @@ export class Renderer extends System {
             renderPass.setBindGroup(1, sceneWideBindGroup);
             renderPass.setBindGroup(2, textureBindGroup);
             renderPass.setVertexBuffer(0, vertexBuffer);
-            renderPass.draw(vertexCount, group.length, 0, 0);
+            renderPass.draw(vertexCount, indexBuffer.size / 4, 0, 0);
         }
 
         renderPass.end();

@@ -1,4 +1,3 @@
-
 @group(0) @binding(0) var<storage, read_write> positions: array<vec3<f32>>;
 @group(0) @binding(1) var<storage, read_write> velocities: array<vec3<f32>>;
 @group(0) @binding(2) var<uniform> deltaTime: f32;

@@ -53,16 +53,15 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let position = positions[i];
     let orientation = normalize(orientations[i]);
     let scale = scales[i];
-
     var transform = quatToMat4(orientation);
-
-    // WGSL matrices are column-major
+    transform[0] *= scale.x;
+    transform[1] *= scale.y;
+    transform[2] *= scale.z;
     transform[3] = vec4<f32>(
         position.x,
         position.y,
         position.z,
         1.0
     );
-
     transforms[i] = transform;
 }

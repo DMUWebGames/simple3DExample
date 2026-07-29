@@ -2,7 +2,7 @@ import { mat4, vec3 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.
 import { System } from "./base.js";
 import { device } from "../../setup.js";
 
-const CAMERA_BUFFER_SIZE = 2 * 16 * 4 + 16;
+// const CAMERA_BUFFER_SIZE = 2 * 16 * 4 + 16;
 const LOCAL_FORWARD = vec3.create(0, 0, -1);
 const LOCAL_UP = vec3.create(0, 1, 0);
 
@@ -13,26 +13,17 @@ export class CameraSystem extends System {
         this.cameraData = new Map();
     }
    
-    update(world, deltaTime, activeEntities) {
-        const cameraId = world.getResource("activeCameraEntity");
-
+    update({world, buffers, misc}) {
+        const cameraId = misc.get("activeCameraEntity");
         const uniformData = this.dataForCamera(world, cameraId);
 
-        // create buffer as necessary
-        if (!this.cameraBuffers.has(cameraId)) {
-            this.cameraBuffers.set(cameraId, device.createBuffer({
-                label: `camera uniform buffer ${cameraId}`,
-                size: CAMERA_BUFFER_SIZE,
-                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-            }));
-        }
-        const cameraBuffer = this.cameraBuffers.get(cameraId);
+        const cameraBuffer = buffers.getOrInsertUniform({
+            label: "camera",
+            data: uniformData
+        });
 
         // write the data into the buffer
         device.queue.writeBuffer(cameraBuffer, 0, uniformData);
-
-        // register the camera buffer for use in the render pass
-        world.registerResource("activeCameraBuffer", this.cameraBuffers.get(cameraId));
     }
 
     dataForCamera(world, cameraId) {
@@ -57,11 +48,11 @@ export class CameraSystem extends System {
         return uniformData;
     }
 
-    resize(world, canvas) {
+    resize({world, canvas, misc}) {
         // TODO: loop over all existing cameras rather than just the live one?
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
-        const cameraId = world.getResource("activeCameraEntity");
+        const cameraId = misc.get("activeCameraEntity");
         const cameraData = world.pools.Camera.getRaw(cameraId);
         cameraData[0] = canvas.width / Math.max(canvas.height, 1);
     }

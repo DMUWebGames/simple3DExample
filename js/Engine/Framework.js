@@ -48,7 +48,11 @@ class TypedComponentPool {
         this.defaultValue = componentDefinition.defaultValue;
        
         // Determine element count based on data layout
-        this.elementsPerEntity = this._calculateElementCount(componentDefinition.defaultValue);
+        // this.elementsPerEntity = this._calculateElementCount(componentDefinition.defaultValue);
+        // Must be in groups of four, apparently
+        this.trueElementPerEntity = this._calculateElementCount(componentDefinition.defaultValue);
+        this.elementsPerEntity = Math.ceil(this.trueElementPerEntity / 4) * 4;//this._calculateElementCount(componentDefinition.defaultValue);
+
         this.data = new Float32Array(maxEntities * this.elementsPerEntity);
         this.active = new Uint8Array(maxEntities); // 0 = inactive, 1 = active
     }
@@ -226,9 +230,9 @@ export class EntityFramework {
         this.entityManager = new EntityManager(this.maxEntities);
         this.signatures = new SignatureManager(this.maxEntities);
         this.pools = {};
-        this.systems = [];
-        this.resources = new ResourceRegistry();
-        this.GPUBuffers = new ResourceRegistry();
+        // this.systems = [];
+        // this.resources = new ResourceRegistry();
+        // this.GPUBuffers = new ResourceRegistry();
 
         // Register components from config
         if (config.components) {
@@ -252,38 +256,38 @@ export class EntityFramework {
         return bit;
     }
 
-    registerGPUBuffer(name, resource) {
-        return this.GPUBuffers.set(name, resource);
-    }
+    // registerGPUBuffer(name, resource) {
+    //     return this.GPUBuffers.set(name, resource);
+    // }
 
-    getGPUBuffer(name) {
-        return this.GPUBuffers.get(name) ?? null;
-    }
+    // getGPUBuffer(name) {
+    //     return this.GPUBuffers.get(name) ?? null;
+    // }
 
-    getOrRegisterGPUBuffer(name, callback) {
-        return this.GPUBuffers.getOrInitialise(name, callback);
-    }
+    // getOrRegisterGPUBuffer(name, callback) {
+    //     return this.GPUBuffers.getOrInitialise(name, callback);
+    // }
 
-    registerResource(name, resource) {
-        return this.resources.set(name, resource);
-    }
+    // registerResource(name, resource) {
+    //     return this.resources.set(name, resource);
+    // }
 
-    getResource(name) {
-        return this.resources.get(name) ?? null;
-    }
+    // getResource(name) {
+    //     return this.resources.get(name) ?? null;
+    // }
 
-    getResourceById(id) {
-        return this.resources.getByIndex(id) ?? null;
-    }
+    // getResourceById(id) {
+    //     return this.resources.getByIndex(id) ?? null;
+    // }
 
 
-    hasResource(name) {
-        return this.resources.has(name);
-    }
+    // hasResource(name) {
+    //     return this.resources.has(name);
+    // }
 
-    removeResource(name) {
-        this.resources.delete(name);
-    }
+    // removeResource(name) {
+    //     this.resources.delete(name);
+    // }
 
     createEntity() {
         return this.entityManager.create();
@@ -330,36 +334,39 @@ export class EntityFramework {
         return this.pools[componentName]?.getBuffer();
     }
 
-    addSystem(system) {
-        // Calculate required mask for this system
-        let requiredMask = 0;
-        for (const componentName of system.componentNames) {
-            const bit = this.componentRegistry.getByName(componentName);
-            if (bit) requiredMask |= bit;
-        }
-        system.requiredMask = requiredMask;
-        system.framework = this;
+    getActive() { 
+        return this.entityManager.getActive();
+    }
+    // addSystem(system) {
+    //     // Calculate required mask for this system
+    //     let requiredMask = 0;
+    //     for (const componentName of system.componentNames) {
+    //         const bit = this.componentRegistry.getByName(componentName);
+    //         if (bit) requiredMask |= bit;
+    //     }
+    //     system.requiredMask = requiredMask;
+    //     system.framework = this;
         
-        this.systems.push(system);
-    }
+    //     this.systems.push(system);
+    // }
 
-    update(deltaTime) {
-        const startTime = performance.now();
-        const activeEntities = this.entityManager.getActive();
-        performance.mark(`${this.constructor.name} update start`);
-        for (const system of this.systems) {
-            performance.mark(`${system.constructor.name} update start`,);
-            const systemStart = performance.now();
-            system.update(this, deltaTime, activeEntities);
-            performance.mark(`${system.constructor.name} update complete`);
-            performance.measure(`${system.constructor.name} update`, `${system.constructor.name} update start`, `${system.constructor.name} update complete`);
-            this.stats.systemTimes[system.constructor.name] = performance.now() - systemStart;
-        }
-        performance.mark(`${this.constructor.name} update complete`);
-        performance.measure(`${this.constructor.name} update`, `${this.constructor.name} update start`, `${this.constructor.name} update complete`);
-        this.stats.frameTime = performance.now() - startTime;
-        this.stats.entityCount = activeEntities.length;
-    }
+    // update(deltaTime) {
+    //     const startTime = performance.now();
+    //     const activeEntities = this.entityManager.getActive();
+    //     performance.mark(`${this.constructor.name} update start`);
+    //     for (const system of this.systems) {
+    //         performance.mark(`${system.constructor.name} update start`,);
+    //         const systemStart = performance.now();
+    //         system.update(this, deltaTime, activeEntities);
+    //         performance.mark(`${system.constructor.name} update complete`);
+    //         performance.measure(`${system.constructor.name} update`, `${system.constructor.name} update start`, `${system.constructor.name} update complete`);
+    //         this.stats.systemTimes[system.constructor.name] = performance.now() - systemStart;
+    //     }
+    //     performance.mark(`${this.constructor.name} update complete`);
+    //     performance.measure(`${this.constructor.name} update`, `${this.constructor.name} update start`, `${this.constructor.name} update complete`);
+    //     this.stats.frameTime = performance.now() - startTime;
+    //     this.stats.entityCount = activeEntities.length;
+    // }
 
     query(componentNames) {
         let mask = 0;
@@ -411,43 +418,5 @@ export class EntityFramework {
             result.set(src, i * elemCount);
         }
         return result;
-    }
-}
-
-class ResourceRegistry {
-    constructor() {
-        this.names = [];
-        this.map = new Map();
-    }
-
-    set(name, value) {
-        if (!this.names.includes(name)) {
-            this.names.push(name);
-        }
-        const id = this.names.indexOf(name);
-        this.map.set(name, value);
-        return id;
-    }
-
-    get(name) {
-        return this.map.get(name);
-    }
-
-    getByIndex(id) {
-        return this.get(this.names[id]);
-    }
-
-    indexOf(name) {
-        return this.names.indexOf(name);
-    }
-
-    getOrInitialise(name, callback) {
-        const resource = this.get(name);
-        if(!resource) {
-            const newResource = callback();
-            this.set(name, newResource);
-            return newResource;
-        }
-        return resource;
     }
 }

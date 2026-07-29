@@ -20,23 +20,11 @@ export class TransformSystem extends System{
         });
     }
 
-    createComponentBuffer(world, component, activeEntities) {
-        const query = world.query(['Position', 'Scale', 'Orientation', 'Transform']);
-        const matchingEntities = query.filter(activeEntities, world.signatures);
-        this.entityCount = matchingEntities.length;
-        const instances = world.exportComponentData(component, matchingEntities);
-        return device.createBuffer({
-            label: `${component} instances`,
-            size: instances.byteLength,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-        });            
-    }
-
-    update(world, deltaTime, activeEntities) { 
-        const positionBuffer = world.getGPUBuffer("positions");
-        const orientationBuffer = world.getGPUBuffer("orientations");
-        const scaleBuffer = world.getOrRegisterGPUBuffer("scales", () => this.createComponentBuffer(world, "Scale", activeEntities));
-        const transformBuffer = world.getOrRegisterGPUBuffer("transforms", () => this.createComponentBuffer(world, "Transform", activeEntities));       
+    update({world, buffers}) { 
+        const positionBuffer = buffers.get("Position");
+        const orientationBuffer = buffers.get("Orientation");
+        const scaleBuffer = buffers.get("Scale");
+        const transformBuffer = buffers.get("Transform");
 
         const bindgroup = device.createBindGroup({
             layout: this.pipeline.getBindGroupLayout(0),
@@ -55,7 +43,7 @@ export class TransformSystem extends System{
 
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, bindgroup);
-        pass.dispatchWorkgroups(Math.ceil(this.entityCount / 64));
+        pass.dispatchWorkgroups(Math.ceil(world.maxEntities / 64));
         pass.end();
 
         device.queue.submit([encoder.finish()]);
