@@ -1,6 +1,6 @@
 performance.mark('space-scene-module');
 
-import { EntityFramework } from "../Engine/Framework.js";
+import { EntityFramework } from "../Engine/ECS/Framework.js";
 import { CameraSystem } from "../Engine/systems/camera.js";
 import { Renderer } from "../Engine/systems/renderer.js";
 import { canvas, device } from "../setup.js";
@@ -9,7 +9,7 @@ import { MovementSystem } from "../Engine/systems/movement.js";
 import { sphericalVertexBuffer } from "../sphere.js";
 import { RotationSystem } from "../Engine/systems/rotation.js";
 import { LightingSystem } from "../Engine/systems/lighting.js";
-import { indentityQuat, randomQuat, randomQuatBetween } from "../tools.js";
+import { indentityQuat, randomQuat, randomQuatBetween, randomVector } from "../tools.js";
 import { loadMaterial } from "../material.js";
 import { TransformSystem } from "../Engine/systems/transform.js";
 import { ScriptingSystem } from "../Engine/systems/scripts.js";
@@ -18,15 +18,8 @@ import { GPUBufferManager } from "../Engine/GPUBuffers.js";
 import { ResourceRegistry } from "../Engine/ResourceRegistry.js";
 
 
-const randomVector = (min, max) => {
-    return {
-        x: min + (max - min) * Math.random(),
-        y: min + (max - min) * Math.random(),
-        z: min + (max - min) * Math.random(),
-    }
-}
 
-const randomAngle = () => 2 * Math.PI * Math.random();
+// const randomAngle = () => 2 * Math.PI * Math.random();
 
 
 const [cubeBuffer, cubeVertexCount] = cubeVertexBuffer(device);

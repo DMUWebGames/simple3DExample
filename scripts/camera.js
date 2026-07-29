@@ -6,7 +6,6 @@ let yawSpeed = 0;
 let pitchSpeed = 0;
 
 export function cameraScript({ yawAcc, pitchAcc, rollAcc, thrust, brake }, ctx) { 
-
     
     const { world, misc, entityId, deltaTime, input } = ctx;
  
@@ -33,6 +32,7 @@ export function cameraScript({ yawAcc, pitchAcc, rollAcc, thrust, brake }, ctx) 
     // update the orientation of the camera
     quat.mul(orientation, deltaQuat, orientation);
     quat.normalize(orientation, orientation);
+
     world.updateComponent(entityId, "Orientation", orientation);
 
     // calculate the forward acceleration, applying brake and thrust

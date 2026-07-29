@@ -36,6 +36,14 @@ export function mappedBuffer(device, data, args) {
     return buffer;
 }
 
+export const randomVector = (min, max) => {
+    return {
+        x: min + (max - min) * Math.random(),
+        y: min + (max - min) * Math.random(),
+        z: min + (max - min) * Math.random(),
+    }
+}
+
 export function randomOrientation() {
     return vec3.create(
         (Math.random() - 0.5) * 0.1,
