@@ -19,10 +19,8 @@ struct Light {
     _pad2: f32,
 };
 
-
-struct Camera {
-    viewMatrix: mat4x4<f32>,
-    projMatrix: mat4x4<f32>,
+struct RenderCamera {
+    viewProjMatrix: mat4x4<f32>,
     position: vec3<f32>,
     _pad: f32
 }
@@ -37,9 +35,11 @@ struct Frame {
 @group(0) @binding(0) var<storage, read> transformIndices: array<u32>;
 @group(0) @binding(1) var<storage, read> transforms: array<mat4x4<f32>>;
 
-@group(1) @binding(0) var<uniform> camera: Camera;
+// @group(1) @binding(0) var<uniform> camera: Camera;
 @group(1) @binding(1) var<uniform> light: Light;
 @group(1) @binding(2) var sampler2D: sampler;
+@group(1) @binding(3) var<storage, read> cameras: array<RenderCamera>;
+@group(1) @binding(4) var<uniform> activeCamera: u32;
 
 @group(2) @binding(0) var albedoTexture: texture_2d<f32>;
 
@@ -49,8 +49,9 @@ fn vsMain(@builtin(instance_index) instanceIndex: u32, input: VertexInput) -> Ve
     let transformIndex = transformIndices[instanceIndex];
     let transform = transforms[transformIndex];
     let worldPos = transform * vec4<f32>(input.position, 1.0);
+    let camera = cameras[activeCamera];
 
-    output.position = camera.projMatrix * camera.viewMatrix * worldPos;
+    output.position = camera.viewProjMatrix * worldPos;
     output.uv = input.uv;
     output.normal = normalize((transform * vec4<f32>(input.normal, 0.0)).xyz);
     output.worldPos = worldPos.xyz;
@@ -60,6 +61,7 @@ fn vsMain(@builtin(instance_index) instanceIndex: u32, input: VertexInput) -> Ve
 @fragment
 fn fsMain(input: VertexOutput) -> @location(0) vec4<f32> {
     let textureColor = textureSample(albedoTexture, sampler2D, input.uv);
+    let camera = cameras[activeCamera];
     
     let N = normalize(input.normal);
     let L = normalize(-light.direction);

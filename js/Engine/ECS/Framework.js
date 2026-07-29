@@ -96,6 +96,10 @@ export class EntityFramework {
         return this.pools[componentName]?.getBuffer();
     }
 
+    getComponentIndex(entityId, componentName) {
+        return this.pools[componentName]?.getIndex(entityId);
+    }
+
     getActive() { 
         return this.entityManager.getActive();
     }

@@ -52,6 +52,10 @@ export class TypedComponentPool {
         return this.data.slice(offset, offset + this.elementsPerEntity);
     }
 
+    getIndex(entityId) {
+        return entityId * this.elementsPerEntity;
+    }
+
     getRaw(entityId) {
         return this.data.subarray(
             entityId * this.elementsPerEntity,

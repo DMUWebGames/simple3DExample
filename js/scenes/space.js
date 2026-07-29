@@ -9,13 +9,14 @@ import { MovementSystem } from "../Engine/systems/movement.js";
 import { sphericalVertexBuffer } from "../sphere.js";
 import { RotationSystem } from "../Engine/systems/rotation.js";
 import { LightingSystem } from "../Engine/systems/lighting.js";
-import { indentityQuat, randomQuat, randomQuatBetween, randomVector } from "../tools.js";
+import { identityQuat, randomQuat, randomQuatBetween, randomVector } from "../tools.js";
 import { loadMaterial } from "../material.js";
 import { TransformSystem } from "../Engine/systems/transform.js";
 import { ScriptingSystem } from "../Engine/systems/scripts.js";
 import { cameraScript } from "../../scripts/camera.js";
 import { GPUBufferManager } from "../Engine/GPUBuffers.js";
 import { ResourceRegistry } from "../Engine/ResourceRegistry.js";
+import { CommandQueue } from "../Engine/CommandQueue.js";
 
 const [cubeBuffer, cubeVertexCount] = cubeVertexBuffer(device);
 const [sphereBuffer, sphereVertexCount] = sphericalVertexBuffer(device, 20, 1);
@@ -27,6 +28,40 @@ const skyBoxMaterial = await loadMaterial("materials/skybox.json");
 performance.mark('space-scene-assets-loaded');
 performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-assets-loaded');
 
+class Layer { 
+    constructor(systems) { 
+        this.systems = [];
+        if (Array.isArray(systems)) {
+            for (const s of systems) {
+                this.addSystem(s);
+            }
+        } else {
+            throw "WAT?";
+        }
+    }
+    addSystem(system) {
+        this.systems.push(system);
+    }
+
+    update(ctx) { 
+        for (const s of this.systems) {
+            performance.mark(`${s.constructor.name} start`,);
+            s.update(ctx);
+            performance.mark(`${s.constructor.name} complete`);
+            performance.measure(`${s.constructor.name}`, `${s.constructor.name} start`, `${s.constructor.name} complete`);
+
+        }
+    }
+
+    resize(ctx) {
+        for (const s of this.systems) {
+            if ("resize" in s) {
+                s.resize(ctx);
+            }
+        }
+    }
+}
+
 export class SpaceScene {
     constructor({ size, nCubes, nAsteroids }) {
         performance.mark('start-space-scene');
@@ -35,11 +70,12 @@ export class SpaceScene {
             maxEntities: nCubes + nAsteroids + 1 + 1 + 1, // camera, skybox, light
             components: {
                 Position: { x: 0, y: 0, z: 0 },
+                Velocity: { x: 0, y: 0, z: 0 },
+                Acceleration: { x: 0, y: 0, z: 0 },
                 Orientation: randomQuat(),
                 Rotation: randomQuat(),
                 Scale: [1, 1, 1],
                 Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
-                Velocity: { x: 0, y: 0, z: 0 },
                 Renderable: 0,
                 Scriptable: {scriptId: 0, argumentId: 0},
                 Camera: {
@@ -48,11 +84,14 @@ export class SpaceScene {
                     far: 100,
                     fov: 90
                 },
+                RenderCamera: Array(64 + 3).fill(0),
                 Direction: { x: 0.5, y: -1.0, z: 0.3, w: 0 },
                 Colour: { r: 1, g: 1, b: 1, a: 0 },
             }
         });
-        this.systems = [];
+        this.commands = new CommandQueue();
+        // this.systems = [];
+        this.layers = new Map();
         this.buffers = new GPUBufferManager();
         this.renderables = new ResourceRegistry();
         this.input = new ResourceRegistry();
@@ -148,8 +187,8 @@ export class SpaceScene {
         this.world.addComponent(this.background, "Renderable", skyBoxRenderableId);
         this.world.addComponent(this.background, "Position", { x: 0, y: 0, z: 0 });
         this.world.addComponent(this.background, "Velocity", { x: 0, y: 0, z: 0 });
-        this.world.addComponent(this.background, "Orientation", indentityQuat());
-        this.world.addComponent(this.background, "Rotation", indentityQuat());
+        this.world.addComponent(this.background, "Orientation", identityQuat());
+        this.world.addComponent(this.background, "Rotation", identityQuat());
         this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
         this.world.addComponent(this.background, "Transform", Array(16).fill(0));
 
@@ -159,17 +198,17 @@ export class SpaceScene {
         this.cameraId = this.world.createEntity();
         this.world.addComponent(this.cameraId, "Position", { x: 0, y: 0, z: 0 });
         this.world.addComponent(this.cameraId, "Velocity", [0, 0, 0]);
-        this.world.addComponent(this.cameraId, "Orientation", indentityQuat());
-        this.world.addComponent(this.cameraId, "Rotation", randomQuat());
-
-        // Camera, lights and scripts are probably uniforms?
+        this.world.addComponent(this.cameraId, "Acceleration", [0, 0, -100]);
+        this.world.addComponent(this.cameraId, "Orientation", identityQuat());
+        this.world.addComponent(this.cameraId, "Rotation", identityQuat());
 
         this.world.addComponent(this.cameraId, "Camera", {
-            aspect: 16 / 9,
+            aspect: canvas.height / canvas.width,
             near: 0.01,
             far: this.size*2,
             fov: 60
         });
+        this.world.addComponent(this.cameraId, "RenderCamera", Array(64 + 3).fill(0));
         this.world.addComponent(this.cameraId, "Scriptable", [0, 0]);
         
         // Lights
@@ -193,14 +232,22 @@ export class SpaceScene {
 
         this.createBuffers();
 
-        // Systems
-        this.addSystem(new ScriptingSystem(scripts, scriptData));
-        this.addSystem(new CameraSystem());
-        this.addSystem(new MovementSystem(this.size));
-        this.addSystem(new RotationSystem());
-        this.addSystem(new LightingSystem());
-        this.addSystem(new TransformSystem());
-        this.addSystem(new Renderer());
+
+
+        // Layers
+        this.addLayer("scripts", [
+            new ScriptingSystem(scripts, scriptData)
+        ]);
+        this.addLayer("simulation", [
+            new MovementSystem(this.size),
+            new RotationSystem(),
+            new TransformSystem()
+        ]);
+        this.addLayer("render", [
+            new CameraSystem(),
+            new LightingSystem(),
+            new Renderer()
+        ]);
 
         performance.mark('space-scene-configured');
         performance.measure('space-scene-initialisation', 'start-space-scene', 'space-scene-configured');
@@ -235,9 +282,14 @@ export class SpaceScene {
         
         this.buffers.createUniform({
             label: "deltaTime",
-            data: new Float32Array([1 / 60])
+            data: new Float32Array([0])
         });
-        
+
+        this.buffers.createUniform({
+            label: "activeCamera",
+            data: new Uint32Array([this.cameraId])
+        });
+
         this.buffers.createUniform({
             label: "size",
             data: new Float32Array([this.size])
@@ -246,7 +298,10 @@ export class SpaceScene {
     }
 
     addSystem(system) {
-        this.systems.push(system);        
+        this.layers.push(new Layer([system]));        
+    }
+    addLayer(name, systems) {
+        this.layers.set(name, new Layer(systems));
     }
 
     get ctx() {
@@ -257,27 +312,30 @@ export class SpaceScene {
             misc: this.misc,
             input: this.input,
             activeEntities: this.world.getActive(),
+            commands: this.commands,
             canvas
         }
     }
 
-    update() {
-        performance.mark(`${this.constructor.name} update start`);
-        for (const system of this.systems) {
-            performance.mark(`${system.constructor.name} update start`,);
-            system.update(this.ctx);
-            performance.mark(`${system.constructor.name} update complete`);
-            performance.measure(`${system.constructor.name} update`, `${system.constructor.name} update start`, `${system.constructor.name} update complete`);
-        }
-        performance.mark(`${this.constructor.name} update complete`);
-        performance.measure(`${this.constructor.name} update`, `${this.constructor.name} update start`, `${this.constructor.name} update complete`);
+    update(deltaTime) {
+        performance.mark(`${this.constructor.name} start`);
+        this.buffers.set("deltaTime", 0, new Float32Array([deltaTime]));
+
+        this.layers.get("scripts").update(this.ctx);
+        
+        this.commands.flush(this.world, this.buffers);
+        this.layers.get("simulation").update(this.ctx);
+        this.layers.get("render").update(this.ctx);
+        
+        performance.mark(`${this.constructor.name} complete`);
+        performance.measure(`${this.constructor.name} update`, `${this.constructor.name} start`, `${this.constructor.name} complete`);
     }
 
 
     resize() {
-        this.systems.forEach(system => {
-            if ("resize" in system) {                
-                system.resize(this.ctx)
+        this.layers.forEach(layer => {
+            if ("resize" in layer) {                
+                layer.resize(this.ctx)
             }
         });
     }
@@ -289,10 +347,7 @@ export class SpaceScene {
     frame(ts) {
         const deltaTime = ts - this.prevTime || 1000/60;
         this.prevTime = ts;
-        // const deltaTimeBuffer = this.world.getGPUBuffer("deltaTime");
-        const deltaTimeBuffer = this.buffers.get("deltaTime");
-        device.queue.writeBuffer(deltaTimeBuffer, 0, new Float32Array([deltaTime / 1000]));
-        this.update();
+        this.update(deltaTime / 1000);
         requestAnimationFrame(this.frame.bind(this));
     }
 }

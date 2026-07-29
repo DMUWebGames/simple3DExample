@@ -21,6 +21,7 @@ export class MovementSystem extends System {
 
         const positionBuffer = buffers.get("Position");
         const velocityBuffer = buffers.get("Velocity");
+        const accelerationBuffer = buffers.get("Acceleration");
         const deltaTimeBuffer = buffers.get("deltaTime");
         const sizeBuffer = buffers.get("size");
 
@@ -31,8 +32,9 @@ export class MovementSystem extends System {
             entries: [
                 { binding: 0, resource: { buffer: positionBuffer } },
                 { binding: 1, resource: { buffer: velocityBuffer } },
-                { binding: 2, resource: { buffer: deltaTimeBuffer } },
-                { binding: 3, resource: { buffer: sizeBuffer } }
+                { binding: 2, resource: { buffer: accelerationBuffer } },
+                { binding: 3, resource: { buffer: deltaTimeBuffer } },
+                { binding: 4, resource: { buffer: sizeBuffer } }
             ]
         });
 

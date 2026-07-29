@@ -1,7 +1,8 @@
 @group(0) @binding(0) var<storage, read_write> positions: array<vec3<f32>>;
 @group(0) @binding(1) var<storage, read_write> velocities: array<vec3<f32>>;
-@group(0) @binding(2) var<uniform> deltaTime: f32;
-@group(0) @binding(3) var<uniform> size: f32;
+@group(0) @binding(2) var<storage, read_write> accelerations: array<vec3<f32>>;
+@group(0) @binding(3) var<uniform> deltaTime: f32;
+@group(0) @binding(4) var<uniform> size: f32;
 
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -11,9 +12,11 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     }
 
     var position = positions[i];
-    let velocity = velocities[i];
+    var velocity = velocities[i];
+    let acceleration = accelerations[i];
 
     // move it
+    velocity = velocity + acceleration * deltaTime;
     position = position + velocity * deltaTime;
 
     // wrap if necessary
@@ -23,4 +26,5 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     // write back to component
     positions[i] = position;
+    velocities[i] = velocity;
 }

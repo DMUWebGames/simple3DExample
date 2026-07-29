@@ -16,9 +16,22 @@ try {
 }
 
 export const canvas = document.createElement('canvas');
-export const speedometer = document.createElement('meter');
-speedometer.className = "speed";
-document.body.append(canvas, speedometer);
+export const statsList = document.createElement('dl');
+const dialog = document.createElement('dialog');
+
+dialog.setAttribute("closedby", "any");
+window.addEventListener('keypress', ({ key }) => {
+    console.log(key);
+    if (key == " ") {
+        dialog.showModal();
+    }
+});
+// dialog.
+dialog.append(statsList);
+document.body.append(canvas, dialog);
+// export const speedometer = document.createElement('meter');
+// speedometer.className = "speed";
+// document.body.append(canvas, speedometer);
 
 
 export const format = navigator.gpu.getPreferredCanvasFormat();

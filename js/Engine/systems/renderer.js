@@ -51,9 +51,7 @@ export class Renderer extends System {
     }
 
     getPipeline(material) {
-        
         if (!this.pipelines.has(material)) {
-            console.log("creating pipeline for", material);
             this.pipelines.set(material, this.createPipeline(material))
         }
         return this.pipelines.get(material);
@@ -71,13 +69,15 @@ export class Renderer extends System {
 
         
         const transformBuffer = buffers.get('Transform');
-        const cameraBuffer = buffers.get("camera");
+        const renderCameraBuffer = buffers.get("RenderCamera");
+        const activeCameraBuffer = buffers.get("activeCamera");
+        // const cameraBuffer = buffers.get("camera");
         const lightBuffer = buffers.get("phongLight");
 
-        if (!cameraBuffer) {
-            console.log("no camera buffer found");
-            return;
-        }
+        // if (!cameraBuffer) {
+        //     console.log("no camera buffer found");
+        //     return;
+        // }
 
         if (!lightBuffer) {
             console.log("no light buffer found");
@@ -127,9 +127,11 @@ export class Renderer extends System {
                 layout: pipeline.getBindGroupLayout(1),
                 entries: [
                     // { binding: 0, resource: { buffer: instanceBuffer } },
-                    { binding: 0, resource: { buffer: cameraBuffer } },
+                    // { binding: 0, resource: { buffer: cameraBuffer } },
                     { binding: 1, resource: { buffer: lightBuffer } },
                     { binding: 2, resource: sampler },
+                    { binding: 3, resource: { buffer: renderCameraBuffer } },
+                    { binding: 4, resource: { buffer: activeCameraBuffer } }
                 ]
             });
             

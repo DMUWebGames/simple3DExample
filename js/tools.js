@@ -1,6 +1,6 @@
 import { vec3, quat } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
 
-export const indentityQuat = () => quat.identity();
+export const identityQuat = () => quat.identity();
 
 export function randomQuat() {
     const q = quat.fromEuler(

@@ -7,7 +7,7 @@ export class System {
     }
 
     // Override in subclass
-    update(world, deltaTime) {
+    update() {
         throw new Error('System.update() must be implemented');
     }
 
