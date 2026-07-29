@@ -1,11 +1,7 @@
 import { System } from "./base.js";
 import { device, format, ctx, canvas } from "../../setup.js";
-// import { Light } from "../../light.js";
-// import { mat4 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
 
 const sampler = device.createSampler();
-
-const shaders = new Map();
 
 export class Renderer extends System {
     constructor(renderables) {
@@ -17,18 +13,6 @@ export class Renderer extends System {
         this.pipelines = new Map();
         this.depthTexture = null;
     }
-
-    // getInstanceBuffer(renderableId, instances) {
-    //     let instanceBuffer = this.instanceBuffers.get(renderableId);
-    //     if (!instanceBuffer) {
-    //         instanceBuffer = device.createBuffer({
-    //             size: instances.byteLength,
-    //             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-    //         });
-    //         this.instanceBuffers.set(renderableId, instanceBuffer);
-    //     }
-    //     return instanceBuffer;
-    // }
 
     createPipeline(material) {
         return device.createRenderPipeline({
@@ -83,45 +67,24 @@ export class Renderer extends System {
         });
     }
 
-    update({ world, activeEntities, buffers, renderables }) {
+    update({ buffers, renderables }) {
 
         
         const transformBuffer = buffers.get('Transform');
-        // const renderableQuery = world.query(['Transform', 'Renderable']);
-        // const renderableEntities = renderableQuery.filter(activeEntities, world.signatures);
-
-        // if (!renderableEntities.length) {
-        //     console.log("nothing to render");
-        //     return;
-        // }
-
-        // Create a group of entities per mesh (renderable[0] is the mesh resourceId)
-        // const groups = Map.groupBy(renderableEntities, (entityId) => {
-        //     return world.getComponent(entityId, "Renderable")[0];
-        // });
-
-        // if (!groups.size) {
-        //     return;
-        // }
-
         const cameraBuffer = buffers.get("camera");
-        //const cameraBuffer = world.getResource("activeCameraBuffer");
+        const lightBuffer = buffers.get("phongLight");
+
         if (!cameraBuffer) {
             console.log("no camera buffer found");
             return;
         }
 
-        const lightBuffer = buffers.get("phongLight");
-            // world.getResource("activeLightBuffer");
         if (!lightBuffer) {
             console.log("no light buffer found");
             return;
         }
 
-
-
         const encoder = device.createCommandEncoder();
-
         const renderPass = encoder.beginRenderPass({
             colorAttachments: [{
                 view: ctx.getCurrentTexture().createView(),
@@ -136,19 +99,20 @@ export class Renderer extends System {
             }
         });
 
-        // console.log(buffers);
-        
-        for (const { id, name, resource } of renderables) {
-            // this is too much coupling to the scene
+        for (const { id, resource } of renderables) {
+            
+            // this is too much coupling to the scene logic
+            // can probably be fixed with a custom object for renderables
             const bufferKey = `renderableIndices_${id}`;
+
             const indexBuffer = buffers.get(bufferKey);
             const { vertexBuffer, vertexCount, material } = resource;            
 
             // setup a pipeline
             const pipeline = this.getPipeline(material);
-
-            // console.log(indexBuffer);
             
+            // TODO: surely bindgroups can be created once and reused?
+
             // bind instances
             const instanceBindGroup = device.createBindGroup({
                 layout: pipeline.getBindGroupLayout(0),

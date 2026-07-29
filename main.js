@@ -13,7 +13,7 @@ scene.animate();
 const stats = new Map();
 const n = 1000;
 
-const observer = new PerformanceObserver((list, observer) => {
+const observer = new PerformanceObserver((list) => {
     list.getEntries().forEach((entry) => {
         const values = stats.getOrInsert(entry.name, [])
         values.push(entry.duration);

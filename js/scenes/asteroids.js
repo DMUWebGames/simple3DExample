@@ -1,10 +1,10 @@
-import { Scene } from "../Engine/scene";
+import { Scene } from "../Engine/scene.js";
 
 // randomises a new scene
 
 function asteroidsScene(config) { 
     const data = asteroidsSceneData(config)
-    return Scene.create()
+    return Scene.create(data)
 }
 
 function asteroidsSceneData(nAsteroids=10) { 
@@ -12,7 +12,7 @@ function asteroidsSceneData(nAsteroids=10) {
         renderables: {
             asteroids: {
                 material: "asteroid.json",
-                entities: Array.from({length: nAsteroids}, )
+                entities: Array.from({length: nAsteroids}, () => "WAT?")
             }
         }
     }

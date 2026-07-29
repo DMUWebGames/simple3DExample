@@ -17,11 +17,6 @@ import { cameraScript } from "../../scripts/camera.js";
 import { GPUBufferManager } from "../Engine/GPUBuffers.js";
 import { ResourceRegistry } from "../Engine/ResourceRegistry.js";
 
-
-
-// const randomAngle = () => 2 * Math.PI * Math.random();
-
-
 const [cubeBuffer, cubeVertexCount] = cubeVertexBuffer(device);
 const [sphereBuffer, sphereVertexCount] = sphericalVertexBuffer(device, 20, 1);
 
@@ -109,7 +104,7 @@ export class SpaceScene {
             mouse.movementY = ev.movementY;
         }
 
-        document.addEventListener("pointerlockchange", ev => {
+        document.addEventListener("pointerlockchange", () => {
             if (document.pointerLockElement === canvas) {
                 canvas.addEventListener("mousemove", updateMouse);
             } else {
@@ -126,7 +121,7 @@ export class SpaceScene {
             keys[ev.key] = false;
         });
 
-        new Array(nCubes).fill(0).forEach((_, i) => {
+        new Array(nCubes).fill(0).forEach(() => {
             const id = this.world.createEntity();
             this.world.addComponent(id, "Renderable", cubeRenderableId);
             this.world.addComponent(id, "Position", randomVector(-size, size));
@@ -137,7 +132,7 @@ export class SpaceScene {
             this.world.addComponent(id, "Transform", Array(16).fill(0));
         });
 
-        new Array(nAsteroids).fill(0).forEach((_, i) => {
+        new Array(nAsteroids).fill(0).forEach(() => {
             const id = this.world.createEntity();
             const asteroidSize = 2 + Math.random() * 8;
             this.world.addComponent(id, "Renderable", asteroidRenderableId);
@@ -201,7 +196,7 @@ export class SpaceScene {
         // Systems
         this.addSystem(new ScriptingSystem(scripts, scriptData));
         this.addSystem(new CameraSystem());
-        this.addSystem(new MovementSystem(this.world, this.size));
+        this.addSystem(new MovementSystem(this.size));
         this.addSystem(new RotationSystem());
         this.addSystem(new LightingSystem());
         this.addSystem(new TransformSystem());
@@ -266,7 +261,7 @@ export class SpaceScene {
         }
     }
 
-    update(deltaTime) {
+    update() {
         performance.mark(`${this.constructor.name} update start`);
         for (const system of this.systems) {
             performance.mark(`${system.constructor.name} update start`,);
@@ -297,7 +292,7 @@ export class SpaceScene {
         // const deltaTimeBuffer = this.world.getGPUBuffer("deltaTime");
         const deltaTimeBuffer = this.buffers.get("deltaTime");
         device.queue.writeBuffer(deltaTimeBuffer, 0, new Float32Array([deltaTime / 1000]));
-        this.update(deltaTime / 1000);
+        this.update();
         requestAnimationFrame(this.frame.bind(this));
     }
 }

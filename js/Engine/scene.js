@@ -1,13 +1,13 @@
-import { loadMaterial } from "../material";
+import { loadMaterial } from "../material.js";
 
 export class Scene {
 
     static async create({cameras, materials, properties}) {
-        const materials = await Promise.all(materials.map(loadMaterial));
+        materials = await Promise.all(materials.map(loadMaterial));
         return new Scene({
             materials,
-            properties
-
+            properties,
+            cameras
         })
     }
 

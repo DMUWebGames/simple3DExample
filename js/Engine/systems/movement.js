@@ -1,12 +1,11 @@
 import { System } from "./base.js";
 import { device } from "../../setup.js";
-import { vec3 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
 import { createShader } from "../../shader.js";
 
 const movementShader = await createShader('movement.wgsl');
 
 export class MovementSystem extends System {
-    constructor(world, size) {
+    constructor(size) {
         super({ Position: null, Velocity: null });
         this.size = size;
         this.pipeline = device.createComputePipeline({
@@ -18,7 +17,7 @@ export class MovementSystem extends System {
         });
     }
 
-    update({world, deltaTime, activeEntities, buffers}) {
+    update({world, buffers}) {
 
         const positionBuffer = buffers.get("Position");
         const velocityBuffer = buffers.get("Velocity");

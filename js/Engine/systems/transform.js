@@ -54,7 +54,7 @@ export class TransformSystem extends System{
         // this.updateCPU(world, deltaTime, matchingEntities);
     }
 
-    updateCPU(world, deltaTime, matchingEntities) {
+    updateCPU(world, matchingEntities) {
         // CPU version
         for (const entityId of matchingEntities) {
             const transform = world.getComponent(entityId, "Transform");

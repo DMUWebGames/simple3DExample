@@ -1,4 +1,4 @@
-import { mat4, vec3, quat } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
+import { vec3, quat } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
 
 export const indentityQuat = () => quat.identity();
 
