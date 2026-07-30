@@ -19,7 +19,6 @@ const observer = new PerformanceObserver((list) => {
         const key = entry.name.replace(" ", "-");
         const hasDt = statsList.querySelector(`dt.${key}`);
         if (!hasDt) {
-            console.log("creating", key);
             const dt = document.createElement("dt");
             const dd = document.createElement("dd");
             dd.classList.add(key);

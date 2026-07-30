@@ -13,11 +13,11 @@ export class ScriptingSystem extends System {
         const query = world.query(['Scriptable']);
         const matchingEntities = query.filter(activeEntities, world.signatures);
         for (const entityId of matchingEntities) {
-            ctx.entityId = entityId;
+            // ctx.entityId = entityId;
             const [scriptId, dataId] = world.getComponent(entityId, "Scriptable");
             const script = this.scripts[scriptId];
             const data = this.data[dataId];
-            script(data, ctx);
+            script(entityId, data, ctx);
         }
     }
 }

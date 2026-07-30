@@ -17,6 +17,7 @@ import { cameraScript } from "../../scripts/camera.js";
 import { GPUBufferManager } from "../Engine/GPUBuffers.js";
 import { ResourceRegistry } from "../Engine/ResourceRegistry.js";
 import { CommandQueue } from "../Engine/CommandQueue.js";
+import { Scene } from "../Engine/scene.js";
 
 const [cubeBuffer, cubeVertexCount] = cubeVertexBuffer(device);
 const [sphereBuffer, sphereVertexCount] = sphericalVertexBuffer(device, 20, 1);
@@ -28,42 +29,10 @@ const skyBoxMaterial = await loadMaterial("materials/skybox.json");
 performance.mark('space-scene-assets-loaded');
 performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-assets-loaded');
 
-class Layer { 
-    constructor(systems) { 
-        this.systems = [];
-        if (Array.isArray(systems)) {
-            for (const s of systems) {
-                this.addSystem(s);
-            }
-        } else {
-            throw "WAT?";
-        }
-    }
-    addSystem(system) {
-        this.systems.push(system);
-    }
 
-    update(ctx) { 
-        for (const s of this.systems) {
-            performance.mark(`${s.constructor.name} start`,);
-            s.update(ctx);
-            performance.mark(`${s.constructor.name} complete`);
-            performance.measure(`${s.constructor.name}`, `${s.constructor.name} start`, `${s.constructor.name} complete`);
-
-        }
-    }
-
-    resize(ctx) {
-        for (const s of this.systems) {
-            if ("resize" in s) {
-                s.resize(ctx);
-            }
-        }
-    }
-}
-
-export class SpaceScene {
+export class SpaceScene extends Scene {
     constructor({ size, nCubes, nAsteroids }) {
+        super();
         performance.mark('start-space-scene');
         this.size = size;
         this.world = new EntityFramework({
@@ -89,13 +58,6 @@ export class SpaceScene {
                 Colour: { r: 1, g: 1, b: 1, a: 0 },
             }
         });
-        this.commands = new CommandQueue();
-        // this.systems = [];
-        this.layers = new Map();
-        this.buffers = new GPUBufferManager();
-        this.renderables = new ResourceRegistry();
-        this.input = new ResourceRegistry();
-        this.misc = new ResourceRegistry();
 
         // Rendering data for Cubes
         const cubeRenderableId = this.renderables.set("cube", {
@@ -192,29 +154,31 @@ export class SpaceScene {
         this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
         this.world.addComponent(this.background, "Transform", Array(16).fill(0));
 
+        // Lights
+        this.lightId = this.world.createEntity();
+        this.world.addComponent(this.lightId, "Direction", { x: -0.5, y: -1.0, z: 0.3, w: 0 });
+        this.world.addComponent(this.lightId, "Colour", { r: 0.95, g: 0.9, b: 0.8, a: 0 });
+
+
         // Camera
         // TODO: is camera position determined by some other factors?
         // e.g. the camera could be placed at different locations based on other game state?
         this.cameraId = this.world.createEntity();
         this.world.addComponent(this.cameraId, "Position", { x: 0, y: 0, z: 0 });
         this.world.addComponent(this.cameraId, "Velocity", [0, 0, 0]);
-        this.world.addComponent(this.cameraId, "Acceleration", [0, 0, -100]);
+        this.world.addComponent(this.cameraId, "Acceleration", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Orientation", identityQuat());
         this.world.addComponent(this.cameraId, "Rotation", identityQuat());
 
         this.world.addComponent(this.cameraId, "Camera", {
             aspect: canvas.height / canvas.width,
-            near: 0.01,
+            near: 0.1,
             far: this.size*2,
             fov: 60
         });
         this.world.addComponent(this.cameraId, "RenderCamera", Array(64 + 3).fill(0));
         this.world.addComponent(this.cameraId, "Scriptable", [0, 0]);
         
-        // Lights
-        this.lightId = this.world.createEntity();
-        this.world.addComponent(this.lightId, "Direction", { x: -0.5, y: -1.0, z: 0.3, w: 0 });
-        this.world.addComponent(this.lightId, "Colour", { r: 0.95, g: 0.9, b: 0.8, a: 0 });
 
         // Register some things for systems to access 
         this.misc.set("activeCameraEntity", this.cameraId);
@@ -231,8 +195,6 @@ export class SpaceScene {
         }]
 
         this.createBuffers();
-
-
 
         // Layers
         this.addLayer("scripts", [
@@ -255,30 +217,11 @@ export class SpaceScene {
     }
 
     createBuffers() { 
+
         // Storage buffers for all components
-        const buffers = this.world.exportComponentBuffers();
-        for (const [label, data] of Object.entries(buffers)) {
-            this.buffers.createStorage({ label, data });            
-        }
+        this.buffers.createFromWorld(this.world);
+        this.buffers.indexBy(this.world, "Renderable", 0);
 
-        // Group renderable buffer to get indices for each type
-        const activeEntities = this.world.getActive();
-        const renderableEntities = this.world.query(['Renderable']).filter(activeEntities, this.world.signatures);
-        const renderGroups = Map.groupBy(renderableEntities, (entityId) => {
-            // return buffers["Renderable"][entityId];
-            return this.world.getComponent(entityId, "Renderable")[0];
-        });
-        // console.log(renderGroups);
-        
-        // create indexBuffers for each renderable group
-        for (const renderableId of renderGroups.keys()) {
-            const groupIndices = new Uint32Array(renderGroups.get(renderableId));
-
-            this.buffers.createStorage({
-                label: `renderableIndices_${renderableId}`,
-                data: groupIndices
-            })
-        }
         
         this.buffers.createUniform({
             label: "deltaTime",
@@ -297,12 +240,6 @@ export class SpaceScene {
 
     }
 
-    addSystem(system) {
-        this.layers.push(new Layer([system]));        
-    }
-    addLayer(name, systems) {
-        this.layers.set(name, new Layer(systems));
-    }
 
     get ctx() {
         return {
@@ -321,33 +258,21 @@ export class SpaceScene {
         performance.mark(`${this.constructor.name} start`);
         this.buffers.set("deltaTime", 0, new Float32Array([deltaTime]));
 
-        this.layers.get("scripts").update(this.ctx);
+        const ctx = this.ctx;
+
+        this.layers.get("scripts").update(ctx);
         
-        this.commands.flush(this.world, this.buffers);
-        this.layers.get("simulation").update(this.ctx);
-        this.layers.get("render").update(this.ctx);
+        // console.log(ctx);
+
+        this.commands.flush(ctx);
+
+        this.layers.get("simulation").update(ctx);
+        this.layers.get("render").update(ctx);
         
         performance.mark(`${this.constructor.name} complete`);
         performance.measure(`${this.constructor.name} update`, `${this.constructor.name} start`, `${this.constructor.name} complete`);
     }
 
 
-    resize() {
-        this.layers.forEach(layer => {
-            if ("resize" in layer) {                
-                layer.resize(this.ctx)
-            }
-        });
-    }
 
-    animate() { 
-        requestAnimationFrame(this.frame.bind(this));
-    }
-
-    frame(ts) {
-        const deltaTime = ts - this.prevTime || 1000/60;
-        this.prevTime = ts;
-        this.update(deltaTime / 1000);
-        requestAnimationFrame(this.frame.bind(this));
-    }
 }

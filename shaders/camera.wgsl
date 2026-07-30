@@ -36,9 +36,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     renderCameras[cam].position = position;
     renderCameras[cam].viewProjMatrix = projMatrix * viewMatrix;
-    // renderCameras[cam].projMatrix = projMatrix;
 
-    // viewProjMatrix = projMatrix * viewMatrix;
 }
 
 fn perspective(

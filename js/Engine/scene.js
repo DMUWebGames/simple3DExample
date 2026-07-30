@@ -1,18 +1,43 @@
-import { loadMaterial } from "../material.js";
+import { CommandQueue } from "./CommandQueue.js";
+import { GPUBufferManager } from "./GPUBuffers.js";
+import { Layer } from "./Layer.js";
+import { ResourceRegistry } from "./ResourceRegistry.js";
 
 export class Scene {
 
-    static async create({cameras, materials, properties}) {
-        materials = await Promise.all(materials.map(loadMaterial));
-        return new Scene({
-            materials,
-            properties,
-            cameras
-        })
+    constructor() { 
+        this.commands = new CommandQueue();
+        this.layers = new Map();
+        this.buffers = new GPUBufferManager();
+        this.renderables = new ResourceRegistry();
+        this.input = new ResourceRegistry();
+        this.misc = new ResourceRegistry();
     }
 
-    constructor(label) { 
-        this.label = label;
+    addSystem(system) {
+        this.layers.push(new Layer([system]));        
+    }
+    addLayer(name, systems) {
+        this.layers.set(name, new Layer(systems));
+    }
+
+    resize() {
+        this.layers.forEach(layer => {
+            if ("resize" in layer) {                
+                layer.resize(this.ctx)
+            }
+        });
+    }
+
+    animate() { 
+        requestAnimationFrame(this.frame.bind(this));
+    }
+
+    frame(ts) {
+        const deltaTime = ts - this.prevTime || 1000 / 60;
+        this.prevTime = ts;
+        this.update(deltaTime / 1000);
+        requestAnimationFrame(this.frame.bind(this));
     }
 
 }

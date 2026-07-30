@@ -35,6 +35,33 @@ export class GPUBufferManager {
     }
 
 
+    createFromWorld(world) {
+        const buffers = world.exportComponentBuffers();
+        for (const [label, data] of Object.entries(buffers)) {
+            this.createStorage({ label, data });
+        }
+    }
+
+    indexBy(world, component, dataIndex) {
+
+        // Get the full list of entities with the requested component
+        const activeEntities = world.getActive();
+        const indexableEntities = world.query([component]).filter(activeEntities, world.signatures);
+
+        // Group the given component on the given value (at dataIndex)
+        const indexGroups = Map.groupBy(indexableEntities, (entityId) => {
+            return world.getComponent(entityId, component)[dataIndex];
+        });
+       
+        // Create indexBuffers for each group
+        for (const key of indexGroups.keys()) {
+            this.createStorage({
+                label: `renderableIndices_${key}`,
+                data: new Uint32Array(indexGroups.get(key))
+            })
+        }
+    }
+
     get(label) {
         return this.buffers.get(label);
     }
@@ -62,6 +89,6 @@ export class GPUBufferManager {
 
     set(label, index, data) {
         const buffer = this.get(label);
-        device.queue.writeBuffer(buffer, index, data);
+        device.queue.writeBuffer(buffer, index, data, 0, data.byteLength/4);
     }
 }

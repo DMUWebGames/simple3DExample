@@ -5,12 +5,15 @@ let rollSpeed = 0;
 let yawSpeed = 0;
 let pitchSpeed = 0;
 
-export function cameraScript({ yawAcc, pitchAcc, rollAcc, thrust, brake }, ctx) { 
+// TODO: Work out how to make the minimum necessary update to compute buffers here
+// I assume it will be updating acceleration buffers only
+
+export function cameraScript(entityId, { yawAcc, pitchAcc, rollAcc, thrust, brake }, ctx) { 
     
-    const { world, misc, entityId, deltaTime, input } = ctx;
+    const { world, deltaTime, input, commands } = ctx;
  
-    const cameraId = misc.get("activeCameraEntity");
-    if (entityId !== cameraId) return;
+    // const cameraId = misc.get("activeCameraEntity");
+    // if (entityId !== cameraId) return;
 
     const orientation = world.getComponent(entityId, "Orientation");
     const mouse = input.get("mouse");
@@ -43,5 +46,6 @@ export function cameraScript({ yawAcc, pitchAcc, rollAcc, thrust, brake }, ctx) 
     const velocity = world.getComponent(entityId, "Velocity");
     vec3.add(velocity, forward, velocity);
     world.updateComponent(entityId, "Velocity", velocity);
+    // commands.push(entityId)
 }
 

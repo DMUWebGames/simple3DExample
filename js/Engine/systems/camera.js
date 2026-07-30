@@ -58,7 +58,7 @@ export class CameraSystem extends System {
         const entityId = misc.get("activeCameraEntity");
         const cameraData = world.pools.Camera.getRaw(entityId);
         cameraData[0] = aspect;
-        commands.push({component: "Camera", type: "write", entityId, data: cameraData})
+        commands.push({ component: "Camera", type: "write", entityId, data: cameraData });
     }
 
 }
