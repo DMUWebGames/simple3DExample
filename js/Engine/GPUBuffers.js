@@ -9,6 +9,7 @@ export class GPUBufferManager {
     }
 
     _createBuffer(label, data, usage) {
+        if (this.buffers.has(label)) throw `Buffer '${label}' already exists!`;
         const buffer = device.createBuffer({
             label,
             size: data.byteLength,
