@@ -1,13 +1,11 @@
 import { mat4, vec3 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
-import { System } from "./base.js";
 import { device } from "../../setup.js";
 import { createShader } from "../../shader.js";
 
 const cameraShader = await createShader('camera.wgsl');
 
-export class CameraSystem extends System {
+export class CameraSystem {
     constructor() {
-        super({ Camera: { near: 0.1, far: 1000, fov: 60 } });
         this.pipeline = device.createComputePipeline({
             label: "camera system",
             layout: "auto",

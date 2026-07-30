@@ -1,14 +1,7 @@
-import { System } from "./base.js";
 import { device } from "../../setup.js";
 
-// const LIGHT_BUFFER_SIZE = 2 * 4 * 4; // 2 vec4's
-
-export class LightingSystem extends System {
+export class LightingSystem {
     constructor() {
-        super({
-            Direction: { x: 0.5, y: -1.0, z: 0.3, w: 0 },
-            Colour: { r: 1, g: 1, b: 1, a: 0 }
-        });
         this.buffers = new Map();
     }
 

@@ -1,5 +1,3 @@
-import { System } from "./base.js";
-import { device } from "../../setup.js";
 import { createShader } from "../../shader.js";
 import { ComputeSystem } from "./compute.js";
 

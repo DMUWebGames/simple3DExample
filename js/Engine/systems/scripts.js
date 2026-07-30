@@ -1,9 +1,6 @@
-import { System } from "./base.js";
-
-export class ScriptingSystem extends System { 
+export class ScriptingSystem { 
 
     constructor(scripts, data) { 
-        super({ Scriptable: [0, 0] })
         this.scripts = scripts;
         this.data = data;
     }

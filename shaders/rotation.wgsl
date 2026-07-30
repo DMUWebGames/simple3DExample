@@ -1,4 +1,3 @@
-
 fn quatMul(a: vec4<f32>, b: vec4<f32>) -> vec4<f32> {
     return vec4<f32>(
         a.w * b.xyz +
@@ -10,63 +9,57 @@ fn quatMul(a: vec4<f32>, b: vec4<f32>) -> vec4<f32> {
     );
 }
 
+fn quatFromAxisAngle(
+    axis: vec3<f32>,
+    angle: f32
+) -> vec4<f32> {
+    let halfAngle = angle * 0.5;
+    let s = sin(halfAngle);
 
-fn quatSlerp(a: vec4<f32>, b: vec4<f32>, t: f32) -> vec4<f32> {
-    var end = b;
-
-    var cosTheta = dot(a, b);
-
-    // Take shortest path
-    if (cosTheta < 0.0) {
-        end = -b;
-        cosTheta = -cosTheta;
-    }
-
-    // Nearly identical: use lerp
-    if (cosTheta > 0.9995) {
-        return normalize(mix(a, end, t));
-    }
-
-    let theta = acos(clamp(cosTheta, -1.0, 1.0));
-    let sinTheta = sin(theta);
-
-    let wa = sin((1.0 - t) * theta) / sinTheta;
-    let wb = sin(t * theta) / sinTheta;
-
-    return normalize(a * wa + end * wb);
+    return vec4<f32>(
+        axis * s,
+        cos(halfAngle)
+    );
 }
 
-fn updateOrientation(
-    orientation: vec4<f32>,
-    rotation: vec4<f32>,
+fn deltaRotation(
+    angularVelocity: vec3<f32>,
     deltaTime: f32
 ) -> vec4<f32> {
-    let identity = vec4<f32>(0.0, 0.0, 0.0, 1.0);
 
-    let frameDelta = quatSlerp(
-        identity,
-        rotation,
-        deltaTime
+    let angle =
+        length(angularVelocity) * deltaTime;
+
+    if (angle < 0.000001) {
+        return vec4<f32>(
+            0.0,
+            0.0,
+            0.0,
+            1.0
+        );
+    }
+
+    let axis =
+        normalize(angularVelocity);
+
+    return quatFromAxisAngle(
+        axis,
+        angle
     );
-
-    let newOrientation = quatMul(
-        orientation,
-        frameDelta
-    );
-
-    return normalize(newOrientation);
 }
 
-
 @group(0) @binding(0) var<storage, read_write> orientations: array<vec4<f32>>;
-@group(0) @binding(1) var<storage, read_write> rotations: array<vec4<f32>>;
+@group(0) @binding(1) var<storage, read> angularVelocities: array<vec3<f32>>;
 @group(0) @binding(2) var<uniform> deltaTime: f32;
 
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let i = id.x;
+
     if (i >= arrayLength(&orientations)) {
         return;
     }
-    orientations[i] = updateOrientation(orientations[i], rotations[i], deltaTime);
+    let angularVelocity = angularVelocities[i];
+    let frameRotation = deltaRotation(angularVelocity, deltaTime);
+    orientations[i] = normalize(quatMul(orientations[i], frameRotation));
 }

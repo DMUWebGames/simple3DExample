@@ -1,14 +1,9 @@
-import { System } from "./base.js";
 import { device, format, ctx, canvas } from "../../setup.js";
 
 const sampler = device.createSampler();
 
-export class Renderer extends System {
+export class Renderer {
     constructor(renderables) {
-        super({ 
-            Renderable: 0,
-            Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
-        });
         this.renderables = renderables;
         this.pipelines = new Map();
         this.depthTexture = null;
@@ -16,6 +11,7 @@ export class Renderer extends System {
 
     createPipeline(material) {
         return device.createRenderPipeline({
+            label: `renderer`,
             layout: "auto",
             vertex: {
                 module: material.module,
@@ -71,13 +67,7 @@ export class Renderer extends System {
         const transformBuffer = buffers.get('Transform');
         const renderCameraBuffer = buffers.get("RenderCamera");
         const activeCameraBuffer = buffers.get("activeCamera");
-        // const cameraBuffer = buffers.get("camera");
         const lightBuffer = buffers.get("phongLight");
-
-        // if (!cameraBuffer) {
-        //     console.log("no camera buffer found");
-        //     return;
-        // }
 
         if (!lightBuffer) {
             console.log("no light buffer found");
