@@ -11,11 +11,16 @@ struct RenderCamera {
     _pad: f32,
 }
 
+struct Canvas {
+    aspect: f32
+}
+
 @group(0) @binding(0) var<storage, read> positions: array<vec4<f32>>;
 @group(0) @binding(1) var<storage, read> orientations: array<vec4<f32>>;
 @group(0) @binding(2) var<storage, read> cameras: array<CameraComponent>;
 @group(0) @binding(3) var<storage, read_write> renderCameras: array<RenderCamera>;
 @group(0) @binding(4) var<uniform> cam: u32;
+@group(0) @binding(5) var<uniform> canvas: Canvas;
 
 @compute @workgroup_size(1)
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -26,7 +31,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let camera = cameras[cam];
 
     let projMatrix = perspective(
-        camera.aspect,
+        canvas.aspect,
         camera.near,
         camera.far,
         camera.fov

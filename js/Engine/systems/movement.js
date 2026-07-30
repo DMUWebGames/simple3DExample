@@ -9,6 +9,7 @@ export class MovementSystem extends System {
         super({ Position: null, Velocity: null });
         this.size = size;
         this.pipeline = device.createComputePipeline({
+            label: "movement system",
             layout: "auto",
             compute: {
                 module: movementShader,

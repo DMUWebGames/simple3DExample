@@ -32,10 +32,7 @@ performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-ass
 
 export class SpaceScene extends Scene {
     constructor({ size, nCubes, nAsteroids }) {
-        super();
-        performance.mark('start-space-scene');
-        this.size = size;
-        this.world = new EntityFramework({
+        super({
             maxEntities: nCubes + nAsteroids + 1 + 1 + 1, // camera, skybox, light
             components: {
                 Position: { x: 0, y: 0, z: 0 },
@@ -58,6 +55,8 @@ export class SpaceScene extends Scene {
                 Colour: { r: 1, g: 1, b: 1, a: 0 },
             }
         });
+        performance.mark('start-space-scene');
+        this.size = size;
 
         // Rendering data for Cubes
         const cubeRenderableId = this.renderables.set("cube", {
@@ -222,12 +221,6 @@ export class SpaceScene extends Scene {
         this.buffers.createFromWorld(this.world);
         this.buffers.indexBy(this.world, "Renderable", 0);
 
-        
-        this.buffers.createUniform({
-            label: "deltaTime",
-            data: new Float32Array([0])
-        });
-
         this.buffers.createUniform({
             label: "activeCamera",
             data: new Uint32Array([this.cameraId])
@@ -256,14 +249,11 @@ export class SpaceScene extends Scene {
 
     update(deltaTime) {
         performance.mark(`${this.constructor.name} start`);
-        this.buffers.set("deltaTime", 0, new Float32Array([deltaTime]));
 
         const ctx = this.ctx;
 
         this.layers.get("scripts").update(ctx);
         
-        // console.log(ctx);
-
         this.commands.flush(ctx);
 
         this.layers.get("simulation").update(ctx);

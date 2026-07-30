@@ -9,6 +9,7 @@ export class TransformSystem extends System{
     constructor() {
         super({ Transform: null });
         this.pipeline = device.createComputePipeline({
+            label: "transform system",
             layout: "auto",
             compute: {
                 module: transformShader,

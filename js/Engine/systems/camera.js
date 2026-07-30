@@ -9,6 +9,7 @@ export class CameraSystem extends System {
     constructor() {
         super({ Camera: { aspect: 16 / 9, near: 0.1, far: 1000, fov: 60 } });
         this.pipeline = device.createComputePipeline({
+            label: "camera system",
             layout: "auto",
             compute: {
                 module: cameraShader,
@@ -23,6 +24,7 @@ export class CameraSystem extends System {
         const positionBuffer = buffers.get("Position");
         const orientationBuffer = buffers.get("Orientation");
         const activeCameraBuffer = buffers.get("activeCamera");
+        const canvasBuffer = buffers.get("canvas");
 
         const pipeline = this.pipeline;
         const bindgroup = device.createBindGroup({
@@ -32,7 +34,8 @@ export class CameraSystem extends System {
                 { binding: 1, resource: { buffer: orientationBuffer } },
                 { binding: 2, resource: { buffer: cameraBuffer } },
                 { binding: 3, resource: { buffer: renderCameraBuffer } },
-                { binding: 4, resource: { buffer: activeCameraBuffer } }
+                { binding: 4, resource: { buffer: activeCameraBuffer } },
+                { binding: 5, resource: { buffer: canvasBuffer } }
             ]
         });
 

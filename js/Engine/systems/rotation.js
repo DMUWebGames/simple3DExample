@@ -8,6 +8,7 @@ export class RotationSystem extends System {
     constructor() {
         super({ Orientation: null, Rotation: null });
         this.pipeline = device.createComputePipeline({
+            label: "rotation system",
             layout: "auto",
             compute: {
                 module: rotationShader,
