@@ -18,6 +18,7 @@ import { GPUBufferManager } from "../Engine/GPUBuffers.js";
 import { ResourceRegistry } from "../Engine/ResourceRegistry.js";
 import { CommandQueue } from "../Engine/CommandQueue.js";
 import { Scene } from "../Engine/scene.js";
+import { AccelerationSystem } from "../Engine/systems/acceleration.js";
 
 const [cubeBuffer, cubeVertexCount] = cubeVertexBuffer(device);
 const [sphereBuffer, sphereVertexCount] = sphericalVertexBuffer(device, 20, 1);
@@ -31,9 +32,9 @@ performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-ass
 
 
 export class SpaceScene extends Scene {
-    constructor({ size, nCubes, nAsteroids }) {
+    constructor({ size, nCrates, nAsteroids }) {
         super({
-            maxEntities: nCubes + nAsteroids + 1 + 1 + 1, // camera, skybox, light
+            maxEntities: nCrates + nAsteroids + 1 + 1 + 1, // camera, skybox, light
             components: {
                 Position: { x: 0, y: 0, z: 0 },
                 Velocity: { x: 0, y: 0, z: 0 },
@@ -120,11 +121,12 @@ export class SpaceScene extends Scene {
             keys[ev.key] = false;
         });
 
-        new Array(nCubes).fill(0).forEach(() => {
+        new Array(nCrates).fill(0).forEach(() => {
             const id = this.world.createEntity();
             this.world.addComponent(id, "Renderable", cubeRenderableId);
             this.world.addComponent(id, "Position", randomVector(-size, size));
-            this.world.addComponent(id, "Velocity", randomVector(-1, 1));
+            this.world.addComponent(id, "Velocity", [0, 0, 0]);
+            this.world.addComponent(id, "Acceleration", randomVector(-5, 5));
             this.world.addComponent(id, "Orientation", randomQuat());
             this.world.addComponent(id, "Rotation", randomQuat());
             this.world.addComponent(id, "Scale", Array(3).fill(1));
@@ -146,7 +148,7 @@ export class SpaceScene extends Scene {
         this.background = this.world.createEntity();
         this.world.addComponent(this.background, "Renderable", skyBoxRenderableId);
         this.world.addComponent(this.background, "Position", { x: 0, y: 0, z: 0 });
-        this.world.addComponent(this.background, "Velocity", { x: 0, y: 0, z: 0 });
+        // this.world.addComponent(this.background, "Velocity", { x: 0, y: 0, z: 0 });
         this.world.addComponent(this.background, "Orientation", identityQuat());
         this.world.addComponent(this.background, "Rotation", identityQuat());
         this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
@@ -164,7 +166,7 @@ export class SpaceScene extends Scene {
         this.cameraId = this.world.createEntity();
         this.world.addComponent(this.cameraId, "Position", { x: 0, y: 0, z: 0 });
         this.world.addComponent(this.cameraId, "Velocity", [0, 0, 0]);
-        this.world.addComponent(this.cameraId, "Acceleration", [0, 0, 0]);
+        // this.world.addComponent(this.cameraId, "Acceleration", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Orientation", identityQuat());
         this.world.addComponent(this.cameraId, "Rotation", identityQuat());
 
@@ -193,14 +195,17 @@ export class SpaceScene extends Scene {
 
         this.createBuffers();
 
+        const ctx = this.ctx;
+
         // Layers
         this.addLayer("scripts", [
             new ScriptingSystem(scripts, scriptData)
         ]);
         this.addLayer("simulation", [
-            new MovementSystem(this.size),
-            new RotationSystem(),
-            new TransformSystem()
+            new AccelerationSystem(ctx),
+            new MovementSystem(ctx),
+            new RotationSystem(ctx),
+            new TransformSystem(ctx)
         ]);
         this.addLayer("render", [
             new CameraSystem(),
@@ -241,7 +246,8 @@ export class SpaceScene extends Scene {
             input: this.input,
             activeEntities: this.world.getActive(),
             commands: this.commands,
-            canvas
+            canvas,
+            device
         }
     }
 

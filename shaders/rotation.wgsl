@@ -10,9 +10,6 @@ fn quatMul(a: vec4<f32>, b: vec4<f32>) -> vec4<f32> {
     );
 }
 
-fn quatNormalize(q: vec4<f32>) -> vec4<f32> {
-    return normalize(q);
-}
 
 fn quatSlerp(a: vec4<f32>, b: vec4<f32>, t: f32) -> vec4<f32> {
     var end = b;
@@ -57,7 +54,7 @@ fn updateOrientation(
         frameDelta
     );
 
-    return quatNormalize(newOrientation);
+    return normalize(newOrientation);
 }
 
 

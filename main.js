@@ -2,9 +2,9 @@ import { SpaceScene } from "./js/scenes/space.js";
 import { statsList } from "./js/setup.js";
 
 const scene = new SpaceScene({
-    size: 5000,
-    nCubes: 2000,
-    nAsteroids: 20000
+    size: 1000,
+    nCrates: 250000,
+    nAsteroids: 1000
 });
 globalThis.scene = scene;
 globalThis.addEventListener("resize", () => scene.resize());

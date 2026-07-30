@@ -1,56 +1,16 @@
 import { System } from "./base.js";
 import { device } from "../../setup.js";
 import { createShader } from "../../shader.js";
+import { ComputeSystem } from "./compute.js";
 
 const movementShader = await createShader('movement.wgsl');
 
-export class MovementSystem extends System {
-    constructor(size) {
-        super({ Position: null, Velocity: null });
-        this.size = size;
-        this.pipeline = device.createComputePipeline({
+export class MovementSystem extends ComputeSystem {
+    constructor(ctx) { 
+        super({
             label: "movement system",
-            layout: "auto",
-            compute: {
-                module: movementShader,
-                entryPoint: "main"
-            }
-        });
-    }
-
-    update({world, buffers}) {
-
-        const positionBuffer = buffers.get("Position");
-        const velocityBuffer = buffers.get("Velocity");
-        const accelerationBuffer = buffers.get("Acceleration");
-        const deltaTimeBuffer = buffers.get("deltaTime");
-        const sizeBuffer = buffers.get("size");
-
-        // create compute pipeline
-        const pipeline = this.pipeline;
-        const bindgroup = device.createBindGroup({
-            layout: pipeline.getBindGroupLayout(0),
-            entries: [
-                { binding: 0, resource: { buffer: positionBuffer } },
-                { binding: 1, resource: { buffer: velocityBuffer } },
-                { binding: 2, resource: { buffer: accelerationBuffer } },
-                { binding: 3, resource: { buffer: deltaTimeBuffer } },
-                { binding: 4, resource: { buffer: sizeBuffer } }
-            ]
-        });
-
-        const encoder = device.createCommandEncoder();
-        const pass = encoder.beginComputePass({
-            label: "movement system"
-        });
-
-        pass.setPipeline(pipeline);
-        pass.setBindGroup(0, bindgroup);
-        pass.dispatchWorkgroups(Math.ceil(world.maxEntities / 64));
-        pass.end();
-
-        device.queue.submit([encoder.finish()]);
-
-
+            module: movementShader,
+            groups: [["Position", "Velocity", "deltaTime", "size"]]
+        }, ctx);
     }
 }
