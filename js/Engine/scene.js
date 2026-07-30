@@ -44,6 +44,8 @@ export class Scene {
     }
 
     resize() {
+        canvas.width = document.body.clientWidth;
+        canvas.height = document.body.clientHeight;
         this.buffers.set("canvas", 0, new Float32Array([canvas.width / canvas.height]));
         this.layers.forEach(layer => {
             if ("resize" in layer) {                
