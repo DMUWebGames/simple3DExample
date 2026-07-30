@@ -1,8 +1,8 @@
 struct CameraComponent {
-    aspect: f32,
     near: f32,
     far: f32,
     fov: f32,
+    _pad1: f32
 }
 
 struct RenderCamera {

@@ -45,7 +45,6 @@ export class SpaceScene extends Scene {
                 Renderable: 0,
                 Scriptable: {scriptId: 0, argumentId: 0},
                 Camera: {
-                    aspect: 16 / 9,
                     near: 0.1,
                     far: 100,
                     fov: 90
@@ -170,7 +169,6 @@ export class SpaceScene extends Scene {
         this.world.addComponent(this.cameraId, "Rotation", identityQuat());
 
         this.world.addComponent(this.cameraId, "Camera", {
-            aspect: canvas.height / canvas.width,
             near: 0.1,
             far: this.size*2,
             fov: 60

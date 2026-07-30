@@ -7,7 +7,7 @@ const cameraShader = await createShader('camera.wgsl');
 
 export class CameraSystem extends System {
     constructor() {
-        super({ Camera: { aspect: 16 / 9, near: 0.1, far: 1000, fov: 60 } });
+        super({ Camera: { near: 0.1, far: 1000, fov: 60 } });
         this.pipeline = device.createComputePipeline({
             label: "camera system",
             layout: "auto",
@@ -51,17 +51,6 @@ export class CameraSystem extends System {
 
         device.queue.submit([encoder.finish()]);
 
-    }
-
-    resize({world, canvas, misc, commands}) {
-        // TODO: loop over all existing cameras rather than just the live one?
-        canvas.width = document.body.clientWidth;
-        canvas.height = document.body.clientHeight;
-        const aspect = canvas.width / Math.max(canvas.height, 1);
-        const entityId = misc.get("activeCameraEntity");
-        const cameraData = world.pools.Camera.getRaw(entityId);
-        cameraData[0] = aspect;
-        commands.push({ component: "Camera", type: "write", entityId, data: cameraData });
     }
 
 }
