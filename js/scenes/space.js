@@ -187,10 +187,10 @@ export class SpaceScene extends Scene {
         this.world.addComponent(this.cameraId, "Acceleration", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Orientation", identityQuat());
         this.world.addComponent(this.cameraId, "Torque", [0, 0, 0]);
-        this.world.addComponent(this.cameraId, "AngularVelocity", randomVector(-.1, .1));
+        this.world.addComponent(this.cameraId, "AngularVelocity", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "InverseInertia", 0.1);
         this.world.addComponent(this.cameraId, "Camera", {
-            near: 0.1,
+            near: 0.01,
             far: this.size*2,
             fov: 60
         });

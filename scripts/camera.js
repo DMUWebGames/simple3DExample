@@ -14,11 +14,6 @@ export function cameraScript(entityId, { torque, thrust, brake }, ctx) {
             mouse.movementX * y,
             (keys.d - keys.a) * z
         ];
-        console.log(
-            mouse.movementX,
-            mouse.movementY,
-            data
-        );
     }
 
 
