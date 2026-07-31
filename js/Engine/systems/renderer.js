@@ -96,6 +96,7 @@ export class Renderer {
             const bufferKey = `renderableIndices_${id}`;
 
             const indexBuffer = buffers.get(bufferKey);
+            if (!indexBuffer) continue;
             const { vertexBuffer, vertexCount, material } = resource;            
 
             // setup a pipeline

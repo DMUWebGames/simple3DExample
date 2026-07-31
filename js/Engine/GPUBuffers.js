@@ -37,7 +37,6 @@ export class GPUBufferManager {
         this.bufferInfo.set(label, { stride });
     }
 
-
     createFromWorld(world) {
         for (const [label, pool] of Object.entries(world.pools)) {
             const data = pool.getBuffer();
@@ -56,7 +55,7 @@ export class GPUBufferManager {
         const indexGroups = Map.groupBy(indexableEntities, (entityId) => {
             return world.getComponent(entityId, component)[dataIndex];
         });
-       
+
         // Create indexBuffers for each group
         for (const key of indexGroups.keys()) {
             const label = `renderableIndices_${key}`;

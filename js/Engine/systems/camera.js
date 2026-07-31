@@ -1,54 +1,16 @@
 import { mat4, vec3 } from "https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js";
 import { device } from "../../setup.js";
 import { createShader } from "../../shader.js";
+import { ComputeSystem } from "./compute.js";
 
 const cameraShader = await createShader('camera.wgsl');
 
-export class CameraSystem {
-    constructor() {
-        this.pipeline = device.createComputePipeline({
+export class CameraSystem extends ComputeSystem {
+    constructor(ctx) { 
+        super({
             label: "camera system",
-            layout: "auto",
-            compute: {
-                module: cameraShader,
-                entryPoint: "main"
-            }
-        });
+            module: cameraShader,
+            groups: [["Position", "Orientation", "Camera", "RenderCamera", "activeCamera", "canvas"]]
+        }, ctx);
     }
-   
-    update({ buffers }) {
-        const cameraBuffer = buffers.get("Camera");
-        const renderCameraBuffer = buffers.get("RenderCamera");
-        const positionBuffer = buffers.get("Position");
-        const orientationBuffer = buffers.get("Orientation");
-        const activeCameraBuffer = buffers.get("activeCamera");
-        const canvasBuffer = buffers.get("canvas");
-
-        const pipeline = this.pipeline;
-        const bindgroup = device.createBindGroup({
-            layout: pipeline.getBindGroupLayout(0),
-            entries: [
-                { binding: 0, resource: { buffer: positionBuffer } },
-                { binding: 1, resource: { buffer: orientationBuffer } },
-                { binding: 2, resource: { buffer: cameraBuffer } },
-                { binding: 3, resource: { buffer: renderCameraBuffer } },
-                { binding: 4, resource: { buffer: activeCameraBuffer } },
-                { binding: 5, resource: { buffer: canvasBuffer } }
-            ]
-        });
-
-        const encoder = device.createCommandEncoder();
-        const pass = encoder.beginComputePass({
-            label: "camera system"
-        });
-
-        pass.setPipeline(pipeline);
-        pass.setBindGroup(0, bindgroup);
-        pass.dispatchWorkgroups(1);
-        pass.end();
-
-        device.queue.submit([encoder.finish()]);
-
-    }
-
 }

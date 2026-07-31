@@ -205,7 +205,7 @@ export class SpaceScene extends Scene {
         // set up scripts
         const scripts = [cameraScript]
         const scriptData = [{
-            torque: [-0.05, -0.05, -2],
+            torque: [-0.25, -0.25, -2],
             thrust: this.size / 100,
             brake: this.size / 100
         }]
@@ -230,7 +230,7 @@ export class SpaceScene extends Scene {
             new TransformSystem(ctx),
         ]);
         this.addLayer("render", [
-            new CameraSystem(),
+            new CameraSystem(ctx),
             new LightingSystem(),
             new Renderer()
         ]);

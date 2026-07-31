@@ -2,9 +2,9 @@ import { performanceObserver } from "./js/performance.js";
 import { SpaceScene } from "./js/scenes/space.js";
 
 const scene = new SpaceScene({
-    size: 10,
-    nCrates: 2,
-    nAsteroids: 1
+    size: 2000,
+    nCrates: 30000,
+    nAsteroids: 5000
 });
 
 globalThis.scene = scene;
