@@ -21,7 +21,6 @@ const dialog = document.createElement('dialog');
 
 dialog.setAttribute("closedby", "any");
 window.addEventListener('keypress', ({ key }) => {
-    console.log(key);
     if (key == " ") {
         dialog.showModal();
     }

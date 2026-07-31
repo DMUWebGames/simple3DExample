@@ -6,10 +6,11 @@ const STORAGE = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST;
 export class GPUBufferManager { 
     constructor() { 
         this.buffers = new Map();
+        this.bufferInfo = new Map();
     }
 
     _createBuffer(label, data, usage) {
-        if (this.buffers.has(label)) throw `Buffer '${label}' already exists!`;
+        if (this.buffers.has(label)) throw new Error(`Buffer '${label}' already exists!`);
         const buffer = device.createBuffer({
             label,
             size: data.byteLength,
@@ -29,17 +30,19 @@ export class GPUBufferManager {
         })
     }
 
-    createStorage({label, data}) {
+    createStorage({ label, data, stride }) {
         this.create({ label, data,
             usage: STORAGE
         })
+        this.bufferInfo.set(label, { stride });
     }
 
 
     createFromWorld(world) {
-        const buffers = world.exportComponentBuffers();
-        for (const [label, data] of Object.entries(buffers)) {
-            this.createStorage({ label, data });
+        for (const [label, pool] of Object.entries(world.pools)) {
+            const data = pool.getBuffer();
+            const stride = pool.elementsPerEntity * data.BYTES_PER_ELEMENT;
+            this.createStorage({ label, data, stride });
         }
     }
 
@@ -56,10 +59,10 @@ export class GPUBufferManager {
        
         // Create indexBuffers for each group
         for (const key of indexGroups.keys()) {
-            this.createStorage({
-                label: `renderableIndices_${key}`,
-                data: new Uint32Array(indexGroups.get(key))
-            })
+            const label = `renderableIndices_${key}`;
+            const data = new Uint32Array(indexGroups.get(key));
+            const stride = data.BYTES_PER_ELEMENT;
+            this.createStorage({ label, data, stride });
         }
     }
 
@@ -88,8 +91,15 @@ export class GPUBufferManager {
         })
     }
 
-    set(label, index, data) {
+    setUniform(label, data) {
         const buffer = this.get(label);
-        device.queue.writeBuffer(buffer, index, data, 0, data.byteLength/4);
+        device.queue.writeBuffer(buffer, 0, data);
+    }
+
+    setStorage(label, entityId, data) {
+        const buffer = this.get(label);
+        const { stride } = this.bufferInfo.get(label);
+        const offset = entityId * stride;
+        device.queue.writeBuffer(buffer, offset, data);
     }
 }

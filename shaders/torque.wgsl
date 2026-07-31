@@ -60,7 +60,7 @@ fn updateOrientation(
 
 @group(0) @binding(0) var<storage, read_write> torques: array<vec3<f32>>;
 @group(0) @binding(1) var<storage, read_write> angularVelocities: array<vec3<f32>>;
-@group(0) @binding(2) var<storage, read_write> inverseInertias: array<vec3<f32>>;
+@group(0) @binding(2) var<storage, read_write> inverseInertias: array<f32>;
 @group(0) @binding(3) var<uniform> deltaTime: f32;
 
 @compute @workgroup_size(64)

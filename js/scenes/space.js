@@ -205,9 +205,7 @@ export class SpaceScene extends Scene {
         // set up scripts
         const scripts = [cameraScript]
         const scriptData = [{
-            yawAcc: -0.05,
-            pitchAcc: -0.05,
-            rollAcc: -2,
+            torque: [-0.05, -0.05, -2],
             thrust: this.size / 100,
             brake: this.size / 100
         }]

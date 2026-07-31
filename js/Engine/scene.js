@@ -33,7 +33,6 @@ export class Scene {
             label: "canvas",
             data: new Float32Array([canvas.width / canvas.height])
         });
-
     }
 
     addSystem(system) {
@@ -46,7 +45,7 @@ export class Scene {
     resize() {
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
-        this.buffers.set("canvas", 0, new Float32Array([canvas.width / canvas.height]));
+        this.buffers.setUniform("canvas", new Float32Array([canvas.width / canvas.height]));
         this.layers.forEach(layer => {
             if ("resize" in layer) {                
                 layer.resize(this.ctx)
@@ -61,7 +60,7 @@ export class Scene {
     frame(ts) {
         const deltaTime = (ts - this.prevTime || 1000 / 60) / 1000;
         this.prevTime = ts;
-        this.buffers.set("deltaTime", 0, new Float32Array([deltaTime]));
+        this.buffers.setUniform("deltaTime", new Float32Array([deltaTime]));
         this.update(deltaTime);
         requestAnimationFrame(this.frame.bind(this));
     }
