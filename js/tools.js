@@ -1,6 +1,6 @@
 import { vec3, quat } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
 
-export const identityQuat = () => quat.identity();
+export const identityQuat = () => Array.from(quat.identity());
 
 export function randomQuat() {
     const q = quat.fromEuler(
@@ -9,7 +9,7 @@ export function randomQuat() {
         Math.random() * Math.PI * 2,
         "xyz"
     );
-    return quat.normalize(q);
+    return Array.from(quat.normalize(q));
 }
 
 export function randomQuatBetween(min, max) {
@@ -19,7 +19,7 @@ export function randomQuatBetween(min, max) {
         (min + Math.random() * (max - min)) * Math.PI * 2,
         "xyz"
     );
-    return quat.normalize(q);
+    return Array.from(quat.normalize(q));
 }
 
 // console.log(mat4.fromQuat(randomQuat()));
@@ -37,19 +37,19 @@ export function mappedBuffer(device, data, args) {
 }
 
 export const randomVector = (min, max) => {
-    return {
-        x: min + (max - min) * Math.random(),
-        y: min + (max - min) * Math.random(),
-        z: min + (max - min) * Math.random(),
-    }
+    return [
+        min + (max - min) * Math.random(),
+        min + (max - min) * Math.random(),
+        min + (max - min) * Math.random(),
+    ]
 }
 
 export function randomOrientation() {
-    return vec3.create(
+    return Array.from(vec3.create(
         (Math.random() - 0.5) * 0.1,
         (Math.random() - 0.5) * 0.1,
         (Math.random() - 0.5) * 0.1
-    );
+    ));
 }
 
 export function randomDirection() {
@@ -59,7 +59,7 @@ export function randomDirection() {
         Math.random() * 2 - 1
     );
     vec3.normalize(dir, dir);
-    return dir;
+    return Array.from(dir);
 }
 
 export function randomInSphere(radius = 100) {
