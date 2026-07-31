@@ -17,9 +17,7 @@ export class CommandQueue {
 
         for (const { type, entityId, component, data } of this) {
             if (type === "write") {
-                console.log({ entityId, component, data });
-                const index = world.getComponentIndex(entityId, component);
-                buffers.set(component, index, data);
+                buffers.setStorage(component, entityId, data);
             }
         }
         this.commands.length = 0;
