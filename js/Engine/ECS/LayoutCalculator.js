@@ -1,25 +1,10 @@
 const layouts = {
-    float: {
-        size: 4,
-        align: 4
-    },
-    vec2: {
-        size: 8,
-        align: 8
-    },
-    vec3: {
-        size: 12,
-        align: 16
-    },
-    vec4: {
-        size: 16,
-        align: 16
-    },
-    mat4: {
-        size: 64,
-        align: 16
-    }
-}
+    float: { size: 4, align: 4, },
+    vec2: { size: 8, align: 8, },
+    vec3: { size: 12, align: 16, },
+    vec4: { size: 16, align: 16, },
+    mat4: { size: 64, align: 16, }
+};
 
 function getType(v) {
     let type = typeof (v);
@@ -29,7 +14,19 @@ function getType(v) {
     return type;
 }
 
+function roundUp(x, alignment) {
+    return Math.ceil(x / alignment) * alignment;
+}
+
 export function getLayout(v) {
+    const layout = _getLayout(v);
+    return {
+        ...layout,
+        stride: roundUp(layout.size, layout.align)
+    }
+}
+
+function _getLayout(v) {
     const type = getType(v);
 
     // scalar
@@ -58,13 +55,15 @@ export function getLayout(v) {
         let offset = 0;
         let maxAlign = 4;
         for (const field of Object.values(v)) {
-            const { size, align } = getLayout(field);
-            offset = Math.ceil(offset / align) * align;
-            offset += size;
-            maxAlign = Math.max(maxAlign, align);
+            const layout = getLayout(field);
+            offset = roundUp(offset, layout.align);
+            offset += layout.stride ?? layout.size;
+            maxAlign = Math.max(maxAlign, layout.align);
         }
-        const finalSize = Math.ceil(offset / maxAlign) * maxAlign;
-        return { size: finalSize, align: maxAlign };
+        return {
+            size: offset,
+            align: maxAlign,
+        };
     }
 
     throw new Error(`
@@ -72,3 +71,5 @@ export function getLayout(v) {
         Valid types (number, array, object)
     `);
 }
+
+console.log(getLayout({ near: 0.01, far: 400, fov: 60 }));

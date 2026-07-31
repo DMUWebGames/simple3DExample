@@ -50,12 +50,7 @@ export class SpaceScene extends Scene {
                 Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
                 Renderable: 0,
                 Scriptable: { scriptId: 0, argumentId: 0 },
-                Camera: {
-                    near: 0.1,
-                    far: 100,
-                    fov: 90,
-                    _pad: 0
-                },
+                Camera: { near: 0, far: 0, fov: 0, _pad: 0 },
                 RenderCamera: { viewProjMatrix: Array(16).fill(0), position: Array(3).fill(0) },
                 Direction: [0, 0, 0, 0],//{ x: 0.5, y: -1.0, z: 0.3, w: 0 },
                 Colour: [0, 0, 0, 0],
@@ -184,7 +179,7 @@ export class SpaceScene extends Scene {
         this.world.addComponent(this.cameraId, "AngularVelocity", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "InverseInertia", 0.1);
         this.world.addComponent(this.cameraId, "Camera", {
-            near: 0.01,
+            near: 1,
             far: this.size*2,
             fov: 60
         });

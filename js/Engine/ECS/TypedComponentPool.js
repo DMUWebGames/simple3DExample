@@ -14,8 +14,7 @@ export class TypedComponentPool {
         // this.elementsPerEntity = this.trueElementPerEntity == 3 ? 4 : this.trueElementPerEntity; //Math.ceil(this.trueElementPerEntity / 4) * 4;
 
         const layout = getLayout(componentDefinition.defaultValue);
-        const strideBytes = Math.ceil(layout.size / layout.align) * layout.align;
-        this.elementsPerEntity = strideBytes / 4;
+        this.elementsPerEntity = layout.stride / 4;
 
         console.log(this);
 
