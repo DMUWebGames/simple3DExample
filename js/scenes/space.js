@@ -37,9 +37,9 @@ export class SpaceScene extends Scene {
         super({
             maxEntities: nCrates + nAsteroids + 1 + 1 + 1, // camera, skybox, light
             components: {
-                Position: { x: 0, y: 0, z: 0 },
-                Velocity: { x: 0, y: 0, z: 0 },
-                Acceleration: { x: 0, y: 0, z: 0 },
+                Position: [0, 0, 0],
+                Velocity: [0, 0, 0],
+                Acceleration: [0, 0, 0],
                 Orientation: randomQuat(),
                 Rotation: randomQuat(),
                 AngularVelocity: [0, 0, 0],
@@ -49,15 +49,16 @@ export class SpaceScene extends Scene {
                 Scale: [1, 1, 1],
                 Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
                 Renderable: 0,
-                Scriptable: {scriptId: 0, argumentId: 0},
+                Scriptable: { scriptId: 0, argumentId: 0 },
                 Camera: {
                     near: 0.1,
                     far: 100,
-                    fov: 90
+                    fov: 90,
+                    _pad: 0
                 },
-                RenderCamera: Array(64 + 3).fill(0),
-                Direction: { x: 0.5, y: -1.0, z: 0.3, w: 0 },
-                Colour: { r: 1, g: 1, b: 1, a: 0 },
+                RenderCamera: { viewProjMatrix: Array(16).fill(0), position: Array(3).fill(0) },
+                Direction: [0, 0, 0, 0],//{ x: 0.5, y: -1.0, z: 0.3, w: 0 },
+                Colour: [0, 0, 0, 0],
             }
         });
         performance.mark('start-space-scene');
@@ -150,23 +151,19 @@ export class SpaceScene extends Scene {
             this.world.addComponent(id, "Renderable", asteroidRenderableId);
             this.world.addComponent(id, "Scale", Array(3).fill(asteroidSize));
             this.world.addComponent(id, "InverseInertia", 1);
-
             this.world.addComponent(id, "Position", randomVector(-size, size));
             this.world.addComponent(id, "Orientation", randomQuat());
-
             this.world.addComponent(id, "Velocity", randomVector(-5, 5));
-            this.world.addComponent(id, "AngularVelocity", [0, 0, 0]);
-            
+            this.world.addComponent(id, "AngularVelocity", [0, 0, 0]);            
             this.world.addComponent(id, "Acceleration", [0, 0, 0]);
             this.world.addComponent(id, "Torque", [0, 0, 0]);
-
             this.world.addComponent(id, "Transform", Array(16).fill(0));
 
         });
 
         this.background = this.world.createEntity();
         this.world.addComponent(this.background, "Renderable", skyBoxRenderableId);
-        this.world.addComponent(this.background, "Position", { x: 0, y: 0, z: 0 });
+        this.world.addComponent(this.background, "Position", [0, 0, 0]);
         this.world.addComponent(this.background, "Orientation", identityQuat());
         this.world.addComponent(this.background, "Rotation", identityQuat());
         this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
@@ -174,15 +171,12 @@ export class SpaceScene extends Scene {
 
         // Lights
         this.lightId = this.world.createEntity();
-        this.world.addComponent(this.lightId, "Direction", { x: -0.5, y: -1.0, z: 0.3, w: 0 });
-        this.world.addComponent(this.lightId, "Colour", { r: 0.95, g: 0.9, b: 0.8, a: 0 });
-
+        this.world.addComponent(this.lightId, "Direction", [-0.5, -1.0, 0.3, 0 ]);
+        this.world.addComponent(this.lightId, "Colour", [0.95, 0.95, 0.7, 0 ]);
 
         // Camera
-        // TODO: is camera position determined by some other factors?
-        // e.g. the camera could be placed at different locations based on other game state?
         this.cameraId = this.world.createEntity();
-        this.world.addComponent(this.cameraId, "Position", { x: 0, y: 0, z: 0 });
+        this.world.addComponent(this.cameraId, "Position", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Velocity", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Acceleration", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Orientation", identityQuat());
@@ -194,7 +188,7 @@ export class SpaceScene extends Scene {
             far: this.size*2,
             fov: 60
         });
-        this.world.addComponent(this.cameraId, "RenderCamera", Array(64 + 3).fill(0));
+        this.world.addComponent(this.cameraId, "RenderCamera", { viewProjMatrix: Array(16).fill(0), position: Array(3).fill(0) });
         this.world.addComponent(this.cameraId, "Scriptable", [0, 0]);
         
 
@@ -235,6 +229,8 @@ export class SpaceScene extends Scene {
             new Renderer()
         ]);
 
+
+        console.log(this.world.pools.RenderCamera.getRaw(this.cameraId));
         performance.mark('space-scene-configured');
         performance.measure('space-scene-initialisation', 'start-space-scene', 'space-scene-configured');
 

@@ -25,13 +25,6 @@ struct RenderCamera {
     _pad: f32
 }
 
-struct Frame {
-    elapsed: f32,
-    _pad1: f32,
-    _pad2: f32,
-    _pad3: f32
-}
-
 @group(0) @binding(0) var<storage, read> transformIndices: array<u32>;
 @group(0) @binding(1) var<storage, read> transforms: array<mat4x4<f32>>;
 

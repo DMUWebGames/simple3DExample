@@ -1,3 +1,5 @@
+import { getLayout } from "./LayoutCalculator.js";
+
 export class TypedComponentPool {
     constructor(maxEntities, componentDefinition) {
         
@@ -8,8 +10,14 @@ export class TypedComponentPool {
         // Determine element count based on data layout
         // this.elementsPerEntity = this._calculateElementCount(componentDefinition.defaultValue);
         // Must be in groups of four, apparently
-        this.trueElementPerEntity = this._calculateElementCount(componentDefinition.defaultValue);
-        this.elementsPerEntity = Math.ceil(this.trueElementPerEntity / 4) * 4;//this._calculateElementCount(componentDefinition.defaultValue);
+        // this.trueElementPerEntity = this._calculateElementCount(componentDefinition.defaultValue);
+        // this.elementsPerEntity = this.trueElementPerEntity == 3 ? 4 : this.trueElementPerEntity; //Math.ceil(this.trueElementPerEntity / 4) * 4;
+
+        const layout = getLayout(componentDefinition.defaultValue);
+        const strideBytes = Math.ceil(layout.size / layout.align) * layout.align;
+        this.elementsPerEntity = strideBytes / 4;
+
+        console.log(this);
 
         this.data = new Float32Array(maxEntities * this.elementsPerEntity);
         this.active = new Uint8Array(maxEntities); // 0 = inactive, 1 = active
@@ -26,10 +34,11 @@ export class TypedComponentPool {
     }
 
     set(entityId, data) {
-        
+
         if (entityId >= this.maxEntities) {
             throw new Error(`Entity ${entityId} exceeds max ${this.maxEntities}`);
         }
+
         const offset = entityId * this.elementsPerEntity;
         
         if (typeof data === 'number') {
@@ -37,10 +46,10 @@ export class TypedComponentPool {
         } else if (Array.isArray(data)) {
             this.data.set(data, offset);
         } else if (data && typeof data === 'object') {
-            const values = Object.values(data);
+            const values = Object.values(data).flat();
+            // console.log(this.name, data);
             // console.log(values);
             // sdlfkjnsdf
-            
             this.data.set(values, offset);
         }
         this.active[entityId] = 1;
