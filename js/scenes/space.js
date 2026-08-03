@@ -3,7 +3,7 @@ performance.mark('space-scene-module');
 import { EntityFramework } from "../Engine/ECS/Framework.js";
 import { CameraSystem } from "../Engine/systems/camera.js";
 import { Renderer } from "../Engine/systems/renderer.js";
-import { canvas, device } from "../setup.js";
+import { device } from "../setup.js";
 import { cubeVertexBuffer } from "../cube.js";
 import { MovementSystem } from "../Engine/systems/movement.js";
 import { sphericalVertexBuffer } from "../sphere.js";
@@ -33,7 +33,7 @@ performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-ass
 
 
 export class SpaceScene extends Scene {
-    constructor({ size, nCrates, nAsteroids }) {
+    constructor({ size, nCrates, nAsteroids, canvas }) {
         super({
             maxEntities: nCrates + nAsteroids + 1 + 1 + 1, // camera, skybox, light
             components: {
@@ -45,7 +45,6 @@ export class SpaceScene extends Scene {
                 AngularVelocity: [0, 0, 0],
                 Torque: [0, 0, 0],
                 InverseInertia: 0,
-                AngularAcceleration: [0, 0, 0, 0],
                 Scale: [1, 1, 1],
                 Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
                 Renderable: 0,
@@ -58,6 +57,7 @@ export class SpaceScene extends Scene {
         });
         performance.mark('start-space-scene');
         this.size = size;
+        this.canvas = canvas;
 
         // Rendering data for Cubes
         const cubeRenderableId = this.renderables.set("cube", {
@@ -91,9 +91,9 @@ export class SpaceScene extends Scene {
             movementY: 0
         });
 
-        canvas.addEventListener("click", () => {
-            if (document.pointerLockElement !== canvas && canvas.requestPointerLock) {
-                canvas.requestPointerLock();
+        this.canvas.addEventListener("click", () => {
+            if (document.pointerLockElement !== this.canvas && this.canvas.requestPointerLock) {
+                this.canvas.requestPointerLock();
             }
         });
 
@@ -127,19 +127,12 @@ export class SpaceScene extends Scene {
             this.world.addComponent(id, "Renderable", cubeRenderableId);
             this.world.addComponent(id, "Scale", Array(3).fill(1));
             this.world.addComponent(id, "InverseInertia", 10);
-
-            // this.world.addComponent(id, "Position", randomVector(-size, size));
-            // this.world.addComponent(id, "Orientation", randomQuat());
-            this.world.addComponent(id, "Position", [0, 0, -2.5]);
-            this.world.addComponent(id, "Orientation", [0, 0, 0, 1]);
-
-            this.world.addComponent(id, "Velocity", [0, 0, 0]);
-            // this.world.addComponent(id, "AngularVelocity", randomVector(-.1, .1));
-            this.world.addComponent(id, "AngularVelocity", [0, 0, 0]);
-
+            this.world.addComponent(id, "Position", randomVector(-size, size));
+            this.world.addComponent(id, "Orientation", randomQuat());
+            this.world.addComponent(id, "Velocity", randomVector(-3, 3));
+            this.world.addComponent(id, "AngularVelocity", randomVector(-1, 1));
             this.world.addComponent(id, "Acceleration", [0, 0, 0]);
             this.world.addComponent(id, "Torque", [0, 0, 0]);
-
             this.world.addComponent(id, "Transform", Array(16).fill(0));
         });
 
@@ -156,7 +149,6 @@ export class SpaceScene extends Scene {
             this.world.addComponent(id, "Acceleration", [0, 0, 0]);
             this.world.addComponent(id, "Torque", [0, 0, 0]);
             this.world.addComponent(id, "Transform", Array(16).fill(0));
-
         });
 
         this.background = this.world.createEntity();
@@ -223,8 +215,8 @@ export class SpaceScene extends Scene {
         ]);
         this.addLayer("render", [
             new CameraSystem(ctx),
-            new LightingSystem(),
-            new Renderer()
+            new LightingSystem(ctx),
+            new Renderer(ctx)
         ]);
 
         performance.mark('space-scene-configured');
@@ -260,7 +252,7 @@ export class SpaceScene extends Scene {
             input: this.input,
             activeEntities: this.world.getActive(),
             commands: this.commands,
-            canvas,
+            canvas: this.canvas,
             device
         }
     }

@@ -28,10 +28,6 @@ window.addEventListener('keypress', ({ key }) => {
 // dialog.
 dialog.append(statsList);
 document.body.append(canvas, dialog);
-// export const speedometer = document.createElement('meter');
-// speedometer.className = "speed";
-// document.body.append(canvas, speedometer);
-
 
 export const format = navigator.gpu.getPreferredCanvasFormat();
 export const ctx = canvas.getContext('webgpu');

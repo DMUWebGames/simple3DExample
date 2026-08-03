@@ -18,6 +18,7 @@ export class ComputeSystem {
 
     createBindGroup(n, group, buffers, device) {
         return device.createBindGroup({
+            label: `${this.label} bg${n}`,
             layout: this.pipeline.getBindGroupLayout(n),
             entries: group.map((b, i) => {
                 return { binding: i, resource: { buffer: buffers.get(b) } }

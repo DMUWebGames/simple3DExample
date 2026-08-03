@@ -1,14 +1,22 @@
-import { format, ctx } from "../../setup.js";
+// import { format, ctx } from "../../setup.js";
 
 
 export class Renderer {
-    constructor({ buffers, device }) {
+    constructor({ buffers, device, canvas }) {
         this.device = device;
         this.sampler = device.createSampler();
         // this.renderables = renderables;
         this.pipelines = new Map();
         this.bindGroups = new Map();
         this.depthTexture = null;
+        this.format = navigator.gpu.getPreferredCanvasFormat();
+        this.ctx = canvas.getContext('webgpu');
+        this.ctx.configure({
+            device,
+            format: this.format,
+            alphamode: "premultiplied"
+        });
+        
     }
 
     createPipeline(material) {
@@ -32,7 +40,7 @@ export class Renderer {
             fragment: {
                 module: material.module,
                 entryPoint: "fsMain",
-                targets: [{ format }]
+                targets: [{ format: this.format }]
             },
             primitive: {
                 topology: "triangle-list",
@@ -57,7 +65,11 @@ export class Renderer {
     }
 
     resize(canvas) {
+        if (this.depthTexture) {
+            this.depthTexture.destroy();
+        }
         this.depthTexture = this.device.createTexture({
+            label: "depth texture",
             size: [canvas.width, canvas.height],
             format: "depth24plus",
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
@@ -85,7 +97,7 @@ export class Renderer {
         const encoder = device.createCommandEncoder();
         const renderPass = encoder.beginRenderPass({
             colorAttachments: [{
-                view: ctx.getCurrentTexture().createView(),
+                view: this.ctx.getCurrentTexture().createView(),
                 loadOp: "clear",
                 storeOp: "store"
             }],

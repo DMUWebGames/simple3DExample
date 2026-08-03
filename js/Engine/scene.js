@@ -4,7 +4,7 @@ import { GPUBufferManager } from "./GPUBuffers.js";
 import { Layer } from "./Layer.js";
 import { ResourceRegistry } from "./ResourceRegistry.js";
 
-import { canvas } from "../setup.js";
+// import { canvas } from "../setup.js";
 
 export class Scene {
 
@@ -31,7 +31,7 @@ export class Scene {
 
         this.buffers.createUniform({
             label: "canvas",
-            data: new Float32Array([canvas.width / canvas.height])
+            data: new Float32Array([1])
         });
     }
 
@@ -42,7 +42,7 @@ export class Scene {
         this.layers.set(name, new Layer(systems));
     }
 
-    resize() {
+    resize(canvas) {
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
         this.buffers.setUniform("canvas", new Float32Array([canvas.width / canvas.height]));
