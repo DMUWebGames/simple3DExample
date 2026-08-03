@@ -20,6 +20,7 @@ import { CommandQueue } from "../Engine/CommandQueue.js";
 import { Scene } from "../Engine/scene.js";
 import { AccelerationSystem } from "../Engine/systems/acceleration.js";
 import { TorqueSystem } from "../Engine/systems/torque.js";
+import { ForceSystem } from "../Engine/systems/force.js";
 
 const [cubeBuffer, cubeVertexCount] = cubeVertexBuffer(device);
 const [sphereBuffer, sphereVertexCount] = sphericalVertexBuffer(device, 20, 1);
@@ -39,12 +40,11 @@ export class SpaceScene extends Scene {
             components: {
                 Position: [0, 0, 0],
                 Velocity: [0, 0, 0],
-                Acceleration: [0, 0, 0],
+                Force: [0, 0, 0],
                 Orientation: [0, 0, 0, 0],
-                Rotation: [0, 0, 0, 0],
                 AngularVelocity: [0, 0, 0],
                 Torque: [0, 0, 0],
-                InverseInertia: 0,
+                Mass: 0,
                 Scale: [1, 1, 1],
                 Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
                 Renderable: 0,
@@ -126,12 +126,12 @@ export class SpaceScene extends Scene {
             const id = this.world.createEntity();
             this.world.addComponent(id, "Renderable", cubeRenderableId);
             this.world.addComponent(id, "Scale", Array(3).fill(1));
-            this.world.addComponent(id, "InverseInertia", 10);
+            this.world.addComponent(id, "Mass", 1);
             this.world.addComponent(id, "Position", randomVector(-size, size));
             this.world.addComponent(id, "Orientation", randomQuat());
             this.world.addComponent(id, "Velocity", randomVector(-3, 3));
             this.world.addComponent(id, "AngularVelocity", randomVector(-1, 1));
-            this.world.addComponent(id, "Acceleration", [0, 0, 0]);
+            this.world.addComponent(id, "Force", [0, 0, 0]);
             this.world.addComponent(id, "Torque", [0, 0, 0]);
             this.world.addComponent(id, "Transform", Array(16).fill(0));
         });
@@ -141,22 +141,26 @@ export class SpaceScene extends Scene {
             const asteroidSize = 2 + Math.random() * 8;
             this.world.addComponent(id, "Renderable", asteroidRenderableId);
             this.world.addComponent(id, "Scale", Array(3).fill(asteroidSize));
-            this.world.addComponent(id, "InverseInertia", 1);
+            this.world.addComponent(id, "Mass", 1000);
             this.world.addComponent(id, "Position", randomVector(-size, size));
             this.world.addComponent(id, "Orientation", randomQuat());
             this.world.addComponent(id, "Velocity", randomVector(-5, 5));
             this.world.addComponent(id, "AngularVelocity", [0, 0, 0]);            
-            this.world.addComponent(id, "Acceleration", [0, 0, 0]);
+            this.world.addComponent(id, "Force", [0, 0, 0]);
             this.world.addComponent(id, "Torque", [0, 0, 0]);
             this.world.addComponent(id, "Transform", Array(16).fill(0));
         });
 
         this.background = this.world.createEntity();
         this.world.addComponent(this.background, "Renderable", skyBoxRenderableId);
+        this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
+        this.world.addComponent(this.background, "Mass", 1000000);
         this.world.addComponent(this.background, "Position", [0, 0, 0]);
         this.world.addComponent(this.background, "Orientation", identityQuat());
-        this.world.addComponent(this.background, "Rotation", identityQuat());
-        this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
+        this.world.addComponent(this.background, "Velocity", [0, 0, 0]);
+        this.world.addComponent(this.background, "AngularVelocity", [0, 0, 0]);
+        this.world.addComponent(this.background, "Force", [0, 0, 0]);
+        this.world.addComponent(this.background, "Torque", [0, 0, 0]);
         this.world.addComponent(this.background, "Transform", Array(16).fill(0));
 
         // Lights
@@ -168,11 +172,11 @@ export class SpaceScene extends Scene {
         this.cameraId = this.world.createEntity();
         this.world.addComponent(this.cameraId, "Position", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Velocity", [0, 0, 0]);
-        this.world.addComponent(this.cameraId, "Acceleration", [0, 0, 0]);
+        this.world.addComponent(this.cameraId, "Force", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Orientation", identityQuat());
         this.world.addComponent(this.cameraId, "Torque", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "AngularVelocity", [0, 0, 0]);
-        this.world.addComponent(this.cameraId, "InverseInertia", 0.1);
+        this.world.addComponent(this.cameraId, "Mass", 10);
         this.world.addComponent(this.cameraId, "Camera", {
             near: 1,
             far: this.size*2,
@@ -204,7 +208,7 @@ export class SpaceScene extends Scene {
         ]);
 
         this.addLayer("physics", [
-            new AccelerationSystem(ctx),
+            new ForceSystem(ctx),
             new TorqueSystem(ctx)
         ]);
 
