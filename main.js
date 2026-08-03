@@ -5,9 +5,9 @@ import { canvas } from "./js/setup.js";
 
 const scene = new SpaceScene({
     canvas,
-    size: 3000,
-    nCrates: 5000,
-    nAsteroids: 5000
+    size: 5000,
+    nCrates: 100000,
+    nAsteroids: 10000
 });
 
 globalThis.scene = scene;

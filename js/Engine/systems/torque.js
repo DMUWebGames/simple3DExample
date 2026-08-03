@@ -9,7 +9,7 @@ export class TorqueSystem extends ComputeSystem {
         super({
             label: "torque system",
             module: torqueShader,
-            groups: [["Torque", "AngularVelocity", "InverseInertia", "deltaTime"]]
+            groups: [["Torque", "AngularVelocity", "Mass", "deltaTime"]]
         }, ctx);
     }
 }

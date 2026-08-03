@@ -21,6 +21,7 @@ import { Scene } from "../Engine/scene.js";
 import { AccelerationSystem } from "../Engine/systems/acceleration.js";
 import { TorqueSystem } from "../Engine/systems/torque.js";
 import { ForceSystem } from "../Engine/systems/force.js";
+import { LocalForceSystem } from "../Engine/systems/localForce.js";
 
 const [cubeBuffer, cubeVertexCount] = cubeVertexBuffer(device);
 const [sphereBuffer, sphereVertexCount] = sphericalVertexBuffer(device, 20, 1);
@@ -41,6 +42,7 @@ export class SpaceScene extends Scene {
                 Position: [0, 0, 0],
                 Velocity: [0, 0, 0],
                 Force: [0, 0, 0],
+                Thrust: [0, 0, 0],
                 Orientation: [0, 0, 0, 0],
                 AngularVelocity: [0, 0, 0],
                 Torque: [0, 0, 0],
@@ -173,6 +175,7 @@ export class SpaceScene extends Scene {
         this.world.addComponent(this.cameraId, "Position", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Velocity", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Force", [0, 0, 0]);
+        this.world.addComponent(this.cameraId, "Thrust", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "Orientation", identityQuat());
         this.world.addComponent(this.cameraId, "Torque", [0, 0, 0]);
         this.world.addComponent(this.cameraId, "AngularVelocity", [0, 0, 0]);
@@ -194,8 +197,8 @@ export class SpaceScene extends Scene {
         const scripts = [cameraScript]
         const scriptData = [{
             torque: [-0.25, -0.25, -2],
-            thrust: this.size / 100,
-            brake: this.size / 100
+            thrust: -150,
+            brake: -100
         }]
 
         this.createBuffers();
@@ -208,6 +211,7 @@ export class SpaceScene extends Scene {
         ]);
 
         this.addLayer("physics", [
+            new LocalForceSystem(ctx),
             new ForceSystem(ctx),
             new TorqueSystem(ctx)
         ]);
