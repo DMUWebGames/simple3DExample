@@ -53,12 +53,15 @@ fn perspective(
 
     let fovRad = radians(fovDeg);
     let f = 1.0 / tan(fovRad * 0.5);
+    let zRange = near - far;
+    let zScale = far / zRange;
+    let zTranslate = (near * far) / zRange;
 
     return mat4x4<f32>(
         vec4<f32>(f / aspect, 0.0, 0.0, 0.0),
         vec4<f32>(0.0, f, 0.0, 0.0),
-        vec4<f32>(0.0, 0.0, far / (near - far), -1.0),
-        vec4<f32>(0.0, 0.0, (near * far) / (near - far), 0.0)
+        vec4<f32>(0.0, 0.0, zScale, -1.0),
+        vec4<f32>(0.0, 0.0, zTranslate, 0.0)
     );
 }
 
