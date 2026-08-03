@@ -1,16 +1,18 @@
-import { device, format, ctx } from "../../setup.js";
+import { format, ctx } from "../../setup.js";
 
-const sampler = device.createSampler();
 
 export class Renderer {
-    constructor(renderables) {
-        this.renderables = renderables;
+    constructor({ buffers, device }) {
+        this.device = device;
+        this.sampler = device.createSampler();
+        // this.renderables = renderables;
         this.pipelines = new Map();
+        this.bindGroups = new Map();
         this.depthTexture = null;
     }
 
     createPipeline(material) {
-        return device.createRenderPipeline({
+        return this.device.createRenderPipeline({
             label: `renderer`,
             layout: "auto",
             vertex: {
@@ -46,6 +48,7 @@ export class Renderer {
         });
     }
 
+
     getPipeline(material) {
         if (!this.pipelines.has(material)) {
             this.pipelines.set(material, this.createPipeline(material))
@@ -54,16 +57,21 @@ export class Renderer {
     }
 
     resize(canvas) {
-        this.depthTexture = device.createTexture({
+        this.depthTexture = this.device.createTexture({
             size: [canvas.width, canvas.height],
             format: "depth24plus",
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
         });
+        this.depthStencilAttachment = {
+            view: this.depthTexture.createView(),
+            depthClearValue: 1.0,
+            depthLoadOp: "clear",
+            depthStoreOp: "store",
+        };
     }
 
-    update({ buffers, renderables }) {
+    update({ buffers, renderables, device }) {
 
-        
         const transformBuffer = buffers.get('Transform');
         const renderCameraBuffer = buffers.get("RenderCamera");
         const activeCameraBuffer = buffers.get("activeCamera");
@@ -81,13 +89,9 @@ export class Renderer {
                 loadOp: "clear",
                 storeOp: "store"
             }],
-            depthStencilAttachment: {
-                view: this.depthTexture.createView(),
-                depthClearValue: 1.0,
-                depthLoadOp: "clear",
-                depthStoreOp: "store",
-            }
+            depthStencilAttachment: this.depthStencilAttachment
         });
+
 
         for (const { id, resource } of renderables) {
             
@@ -104,35 +108,48 @@ export class Renderer {
             
             // TODO: surely bindgroups can be created once and reused?
 
-            // bind instances
-            const instanceBindGroup = device.createBindGroup({
-                layout: pipeline.getBindGroupLayout(0),
-                entries: [
-                    { binding: 0, resource: { buffer: indexBuffer } },
-                    { binding: 1, resource: { buffer: transformBuffer } },
-                ]
-            });
-
             // bind the instance, camera and light data to the pipeline
-            const sceneWideBindGroup = device.createBindGroup({
-                layout: pipeline.getBindGroupLayout(1),
-                entries: [
-                    // { binding: 0, resource: { buffer: instanceBuffer } },
-                    // { binding: 0, resource: { buffer: cameraBuffer } },
-                    { binding: 1, resource: { buffer: lightBuffer } },
-                    { binding: 2, resource: sampler },
-                    { binding: 3, resource: { buffer: renderCameraBuffer } },
-                    { binding: 4, resource: { buffer: activeCameraBuffer } }
-                ]
-            });
+
+            const sceneKey = `${id}_scene`;
+            if (!this.bindGroups.has(sceneKey)) {
+                this.bindGroups.set(sceneKey, device.createBindGroup({
+                    label: sceneKey,
+                    layout: pipeline.getBindGroupLayout(1),
+                    entries: [
+                        { binding: 0, resource: { buffer: lightBuffer } },
+                        { binding: 1, resource: this.sampler },
+                        { binding: 2, resource: { buffer: renderCameraBuffer } },
+                        { binding: 3, resource: { buffer: activeCameraBuffer } }
+                    ]
+                }));
+            }
+            const sceneWideBindGroup = this.bindGroups.get(sceneKey);
+
+            // bind instances
+            const instanceKey = `${id}_instances`;
+            if (!this.bindGroups.has(instanceKey)) {
+                this.bindGroups.set(instanceKey, device.createBindGroup({
+                    label: instanceKey,
+                    layout: pipeline.getBindGroupLayout(0),
+                    entries: [
+                        { binding: 0, resource: { buffer: indexBuffer } },
+                        { binding: 1, resource: { buffer: transformBuffer } },
+                    ]
+                }));
+            }
+            const instanceBindGroup = this.bindGroups.get(instanceKey);
             
             // bind the material textures to the pipeline
-            const textureBindGroup = device.createBindGroup({
-                layout: pipeline.getBindGroupLayout(2),
-                entries: material.textures.map((t, i) => {
-                    return { binding: i, resource: t }
-                })
-            });
+            const textureKey = `${id}_textures`;
+            if (!this.bindGroups.has(textureKey)) {
+                this.bindGroups.set(textureKey, device.createBindGroup({
+                    layout: pipeline.getBindGroupLayout(2),
+                    entries: material.textures.map((t, i) => {
+                        return { binding: i, resource: t }
+                    })
+                }));
+            }
+            const textureBindGroup = this.bindGroups.get(textureKey)
 
             // Setup the render pass and draw the mesh with the instance data
             renderPass.setPipeline(pipeline);
