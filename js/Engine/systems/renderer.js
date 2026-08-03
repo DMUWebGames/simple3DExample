@@ -1,4 +1,4 @@
-import { device, format, ctx, canvas } from "../../setup.js";
+import { device, format, ctx } from "../../setup.js";
 
 const sampler = device.createSampler();
 
@@ -53,7 +53,7 @@ export class Renderer {
         return this.pipelines.get(material);
     }
 
-    resize() {
+    resize(canvas) {
         this.depthTexture = device.createTexture({
             size: [canvas.width, canvas.height],
             format: "depth24plus",

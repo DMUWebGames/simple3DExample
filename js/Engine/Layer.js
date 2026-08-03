@@ -23,10 +23,10 @@ export class Layer {
         }
     }
 
-    resize(ctx) {
+    resize(canvas) {
         for (const s of this.systems) {
             if ("resize" in s) {
-                s.resize(ctx);
+                s.resize(canvas);
             }
         }
     }

@@ -1,6 +1,6 @@
-@group(0) @binding(0) var<storage, read> positions: array<vec3<f32>>;
+@group(0) @binding(0) var<storage, read> positions: array<vec4<f32>>;
 @group(0) @binding(1) var<storage, read> orientations: array<vec4<f32>>;
-@group(0) @binding(2) var<storage, read> scales: array<vec3<f32>>;
+@group(0) @binding(2) var<storage, read> scales: array<vec4<f32>>;
 @group(0) @binding(3) var<storage, read_write> transforms: array<mat4x4<f32>>;
 
 fn quatToMat4(q: vec4<f32>) -> mat4x4<f32> {
@@ -50,10 +50,11 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         return;
     }
 
-    let position = positions[i];
+    let position = positions[i].xyz;
     let orientation = normalize(orientations[i]);
-    let scale = scales[i];
+    let scale = scales[i].xyz;
     var transform = quatToMat4(orientation);
+
     transform[0] *= scale.x;
     transform[1] *= scale.y;
     transform[2] *= scale.z;

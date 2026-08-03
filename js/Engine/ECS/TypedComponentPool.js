@@ -8,16 +8,9 @@ export class TypedComponentPool {
         this.defaultValue = componentDefinition.defaultValue;
        
         // Determine element count based on data layout
-        // this.elementsPerEntity = this._calculateElementCount(componentDefinition.defaultValue);
-        // Must be in groups of four, apparently
-        // this.trueElementPerEntity = this._calculateElementCount(componentDefinition.defaultValue);
-        // this.elementsPerEntity = this.trueElementPerEntity == 3 ? 4 : this.trueElementPerEntity; //Math.ceil(this.trueElementPerEntity / 4) * 4;
-
         const layout = getLayout(componentDefinition.defaultValue);
         this.elementsPerEntity = layout.stride / 4;
-
-        console.log(this);
-
+        
         this.data = new Float32Array(maxEntities * this.elementsPerEntity);
         this.active = new Uint8Array(maxEntities); // 0 = inactive, 1 = active
     }
@@ -46,9 +39,6 @@ export class TypedComponentPool {
             this.data.set(data, offset);
         } else if (data && typeof data === 'object') {
             const values = Object.values(data).flat();
-            // console.log(this.name, data);
-            // console.log(values);
-            // sdlfkjnsdf
             this.data.set(values, offset);
         }
         this.active[entityId] = 1;

@@ -71,5 +71,3 @@ function _getLayout(v) {
         Valid types (number, array, object)
     `);
 }
-
-console.log(getLayout({ near: 0.01, far: 400, fov: 60 }));

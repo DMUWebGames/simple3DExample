@@ -19,5 +19,3 @@ function asteroidsSceneData(nAsteroids=10) {
 }
 
 const asteroids = asteroidsScene();
-
-console.log(asteroids);

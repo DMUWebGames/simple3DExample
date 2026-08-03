@@ -46,11 +46,9 @@ export class Scene {
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
         this.buffers.setUniform("canvas", new Float32Array([canvas.width / canvas.height]));
-        this.layers.forEach(layer => {
-            if ("resize" in layer) {                
-                layer.resize(this.ctx)
-            }
-        });
+        for (const layer of this.layers.values()) {
+            layer.resize(canvas);            
+        }
     }
 
     animate() { 

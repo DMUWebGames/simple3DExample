@@ -31,10 +31,10 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let camera = cameras[cam];
 
     let projMatrix = perspective(
+        camera.fov,
         canvas.aspect,
         camera.near,
-        camera.far,
-        camera.fov
+        camera.far
     );
 
     let viewMatrix = makeViewMatrix(position, orientation);
@@ -45,10 +45,10 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 }
 
 fn perspective(
+    fovDeg: f32,
     aspect: f32,
     near: f32,
-    far: f32,
-    fovDeg: f32
+    far: f32
 ) -> mat4x4<f32> {
 
     let fovRad = radians(fovDeg);

@@ -40,19 +40,19 @@ export class SpaceScene extends Scene {
                 Position: [0, 0, 0],
                 Velocity: [0, 0, 0],
                 Acceleration: [0, 0, 0],
-                Orientation: randomQuat(),
-                Rotation: randomQuat(),
+                Orientation: [0, 0, 0, 0],
+                Rotation: [0, 0, 0, 0],
                 AngularVelocity: [0, 0, 0],
                 Torque: [0, 0, 0],
                 InverseInertia: 0,
-                AngularAcceleration: randomQuat(),
+                AngularAcceleration: [0, 0, 0, 0],
                 Scale: [1, 1, 1],
                 Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
                 Renderable: 0,
                 Scriptable: { scriptId: 0, argumentId: 0 },
                 Camera: { near: 0, far: 0, fov: 0, _pad: 0 },
                 RenderCamera: { viewProjMatrix: Array(16).fill(0), position: Array(3).fill(0) },
-                Direction: [0, 0, 0, 0],//{ x: 0.5, y: -1.0, z: 0.3, w: 0 },
+                Direction: [0, 0, 0, 0],
                 Colour: [0, 0, 0, 0],
             }
         });
@@ -128,11 +128,14 @@ export class SpaceScene extends Scene {
             this.world.addComponent(id, "Scale", Array(3).fill(1));
             this.world.addComponent(id, "InverseInertia", 10);
 
-            this.world.addComponent(id, "Position", randomVector(-size, size));
-            this.world.addComponent(id, "Orientation", randomQuat());
+            // this.world.addComponent(id, "Position", randomVector(-size, size));
+            // this.world.addComponent(id, "Orientation", randomQuat());
+            this.world.addComponent(id, "Position", [0, 0, -2.5]);
+            this.world.addComponent(id, "Orientation", [0, 0, 0, 1]);
 
             this.world.addComponent(id, "Velocity", [0, 0, 0]);
-            this.world.addComponent(id, "AngularVelocity", randomVector(-.1, .1));
+            // this.world.addComponent(id, "AngularVelocity", randomVector(-.1, .1));
+            this.world.addComponent(id, "AngularVelocity", [0, 0, 0]);
 
             this.world.addComponent(id, "Acceleration", [0, 0, 0]);
             this.world.addComponent(id, "Torque", [0, 0, 0]);
@@ -224,8 +227,6 @@ export class SpaceScene extends Scene {
             new Renderer()
         ]);
 
-
-        console.log(this.world.pools.RenderCamera.getRaw(this.cameraId));
         performance.mark('space-scene-configured');
         performance.measure('space-scene-initialisation', 'start-space-scene', 'space-scene-configured');
 
@@ -277,7 +278,7 @@ export class SpaceScene extends Scene {
 
         this.layers.get("simulation").update(ctx);
         this.layers.get("render").update(ctx);
-        
+
         performance.mark(`${this.constructor.name} complete`);
         performance.measure(`${this.constructor.name} update`, `${this.constructor.name} start`, `${this.constructor.name} complete`);
     }
