@@ -10,10 +10,14 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         return;
     }
 
-    if (abs(masses[i]) < 0.0001) {
+    let mass = masses[i];
+    let force = forces[i];
+
+    if (abs(mass) < 0.0001) {
         return;
     }
 
-    let acceleration = forces[i] / masses[i];
-    velocities[i] = velocities[i] + acceleration * deltaTime;
+    let acceleration = force / mass;
+    forces[i] = vec3(0, 0, 0);
+    velocities[i] += acceleration * deltaTime;
 }

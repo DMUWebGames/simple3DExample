@@ -72,5 +72,6 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let angularAcceleration = torques[i] / masses[i];
     let angularVelocity = angularVelocities[i];
+    torques[i] = vec3(0, 0, 0);
     angularVelocities[i] += angularAcceleration * deltaTime;
 }
