@@ -10,7 +10,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         return;
     }
 
-    if(abs(masses[i])) < 0.000001 {
+    if (abs(masses[i]) < 0.0001) {
         return;
     }
 
