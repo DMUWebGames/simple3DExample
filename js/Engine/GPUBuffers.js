@@ -2,6 +2,7 @@ import { device } from "../setup.js";
 
 const UNIFORM = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
 const STORAGE = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST;
+const VERTEX  = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST;
 
 export class GPUBufferManager { 
     constructor() { 
@@ -35,6 +36,14 @@ export class GPUBufferManager {
             usage: STORAGE
         })
         this.bufferInfo.set(label, { stride });
+    }
+
+    createVertex({ label, data, length }) {
+        this.create({
+            label, data,
+            usage: VERTEX
+        });
+        this.bufferInfo.set(label, { length });
     }
 
     createFromWorld(world) {

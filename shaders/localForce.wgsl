@@ -18,5 +18,5 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let orientation = normalize(orientations[i]);
     let worldForce = quatRotateVector(orientation, thrusts[i]);
-    forces[i] = worldForce;
+    forces[i] += worldForce;
 }

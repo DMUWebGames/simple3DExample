@@ -1,5 +1,5 @@
 import { vec3, mat4 } from 'https://wgpu-matrix.org/dist/3.x/wgpu-matrix.module.min.js';
-import { mappedBuffer, randomDirection, randomInSphere, randomOrientation } from "./tools.js";
+import { mappedBuffer } from "./tools.js";
 
 export const cubeVertices = new Float32Array([
   // Each vertex: position (x, y, z), uv (u, v), normal (nx, ny, nz)

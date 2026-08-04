@@ -8,8 +8,9 @@ import { ResourceRegistry } from "./ResourceRegistry.js";
 
 export class Scene {
 
-    constructor(config) { 
+    constructor(canvas, config) { 
         performance.mark('scene start');
+        this.canvas = canvas;
         this.world = new EntityFramework(config);
         this.commands = new CommandQueue();
         this.layers = new Map();
@@ -17,12 +18,14 @@ export class Scene {
         this.renderables = new ResourceRegistry();
         this.input = new ResourceRegistry();
         this.misc = new ResourceRegistry();
-        this._createUniformBuffers();
+        this.__createUniformBuffers();
+        this.initMouse();
+        this.initKeys();
         performance.mark('scene end');
         performance.measure('scene init', 'scene start', 'scene end');
     }
 
-    _createUniformBuffers() { 
+    __createUniformBuffers() { 
         
         this.buffers.createUniform({
             label: "deltaTime",
@@ -49,6 +52,39 @@ export class Scene {
         for (const layer of this.layers.values()) {
             layer.resize(canvas);            
         }
+    }
+
+    initMouse() { 
+        this.input.set("mouse", { movementX: 0, movementY: 0 });
+        const mouse = this.input.get("mouse");
+        function updateMouse(ev) { 
+            mouse.movementX = ev.movementX;
+            mouse.movementY = ev.movementY;
+        }
+        this.canvas.addEventListener("click", () => {
+            if (document.pointerLockElement !== this.canvas && this.canvas.requestPointerLock) {
+                this.canvas.requestPointerLock();
+            }
+        });
+        document.addEventListener("pointerlockchange", () => {
+            if (document.pointerLockElement === this.canvas) {
+                this.canvas.addEventListener("mousemove", updateMouse);
+            } else {
+                this.canvas.removeEventListener("mousemove", updateMouse);
+            }
+        });
+    }
+
+    initKeys() { 
+        const keyMap = "wasd";
+        this.input.set("keys", Object.fromEntries(Array.from(keyMap).map(k => [k, false])));
+        const keys = this.input.get("keys");
+        globalThis.addEventListener("keydown", ev => {
+            keys[ev.key] = true;
+        });
+        globalThis.addEventListener("keyup", ev => {
+            keys[ev.key] = false;
+        });
     }
 
     animate() { 

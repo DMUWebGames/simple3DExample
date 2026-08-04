@@ -3,11 +3,10 @@ import { SpaceScene } from "./js/scenes/space.js";
 
 import { canvas } from "./js/setup.js";
 
-const scene = new SpaceScene({
-    canvas,
-    size: 5000,
-    nCrates: 100000,
-    nAsteroids: 10000
+const scene = new SpaceScene(canvas, {
+    size: 1500,
+    nCrates: 100,
+    nAsteroids: 2000
 });
 
 globalThis.scene = scene;

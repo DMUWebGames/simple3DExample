@@ -12,7 +12,7 @@ export function randomQuat() {
     return Array.from(quat.normalize(q));
 }
 
-export function randomQuatBetween(min, max) {
+export function randomQuatBetween(min=0, max=1) {
     const q = quat.fromEuler(
         (min + Math.random() * (max - min)) * Math.PI * 2,
         (min + Math.random() * (max - min)) * Math.PI * 2,
@@ -36,7 +36,7 @@ export function mappedBuffer(device, data, args) {
     return buffer;
 }
 
-export const randomVector = (min, max) => {
+export const randomVector = (min=-1, max=1) => {
     return [
         min + (max - min) * Math.random(),
         min + (max - min) * Math.random(),

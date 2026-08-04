@@ -9,7 +9,7 @@ export class MovementSystem extends ComputeSystem {
         super({
             label: "movement system",
             module: movementShader,
-            groups: [["Position", "Velocity", "deltaTime", "size"]]
+            groups: [["Position", "Velocity", "Scale", "deltaTime", "size"]]
         }, ctx);
     }
 }
