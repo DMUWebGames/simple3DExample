@@ -29,11 +29,11 @@ struct RenderCamera {
 @group(0) @binding(1) var<storage, read> transforms: array<mat4x4<f32>>;
 
 @group(1) @binding(0) var<uniform> light: Light;
-@group(1) @binding(1) var sampler2D: sampler;
-@group(1) @binding(2) var<storage, read> cameras: array<RenderCamera>;
-@group(1) @binding(3) var<uniform> activeCamera: u32;
+@group(1) @binding(1) var<storage, read> cameras: array<RenderCamera>;
+@group(1) @binding(2) var<uniform> activeCamera: u32;
 
 @group(2) @binding(0) var albedoTexture: texture_2d<f32>;
+@group(2) @binding(1) var sampler2D: sampler;
 
 @vertex
 fn vsMain(@builtin(instance_index) instanceIndex: u32, input: VertexInput) -> VertexOutput {
