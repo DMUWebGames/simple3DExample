@@ -107,17 +107,18 @@ export class SpaceScene extends Scene {
 
     createEntities({ nAsteroids, nCrates }) {
 
-        this.background = this.world.createEntity();
-        this.world.addComponent(this.background, "Renderable", this.skyBoxRenderableId);
-        this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
-        this.world.addComponent(this.background, "Mass", 0.1);
-        this.world.addComponent(this.background, "Position", [0, 0, 0]);
-        this.world.addComponent(this.background, "Orientation", identityQuat());
-        this.world.addComponent(this.background, "Velocity", [0, 0, 0]);
-        this.world.addComponent(this.background, "AngularVelocity", [0, 0, 0]);
-        this.world.addComponent(this.background, "Force", [0, 0, 0]);
-        this.world.addComponent(this.background, "Torque", [0, 0, 0]);
-        this.world.addComponent(this.background, "Transform", Array(16).fill(0));
+        this.background = this.backgroundEntity({ size: this.size });
+        // this.background = this.world.createEntity();
+        // this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
+        // this.world.addComponent(this.background, "Position", [0, 0, 0]);
+        // this.world.addComponent(this.background, "Orientation", identityQuat());
+        // this.world.addComponent(this.background, "Mass", 0.1);
+        // this.world.addComponent(this.background, "Velocity", [0, 0, 0]);
+        // this.world.addComponent(this.background, "AngularVelocity", [0, 0, 0]);
+        // this.world.addComponent(this.background, "Renderable", this.skyBoxRenderableId);
+        // this.world.addComponent(this.background, "Force", [0, 0, 0]);
+        // this.world.addComponent(this.background, "Torque", [0, 0, 0]);
+        // this.world.addComponent(this.background, "Transform", Array(16).fill(0));
 
 
         // Camera
@@ -151,7 +152,6 @@ export class SpaceScene extends Scene {
                 Velocity: randomVector(-.1, .1)
             });
         });
-
     }
 
     createEntity(components) {
@@ -213,12 +213,12 @@ export class SpaceScene extends Scene {
         return id;
     }
 
-    backgroundEntity({size}) {
+    backgroundEntity({ size }) {
         const id = this.baseEntity({
             Scale: Array(3).fill(size),
             Position: [0, 0, 0],
-            Orientation: [0, 0, 0],
-            Mass: 1,
+            Orientation: identityQuat(),
+            Mass: 0.1,
             Velocity: [0, 0, 0],
             AngularVelocity: [0, 0, 0]
         });
