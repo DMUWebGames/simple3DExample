@@ -1,5 +1,4 @@
 import { createShader } from "../../shader.js";
-import { device } from "../../setup.js";
 import { ComputeSystem } from "./compute.js";
 
 const transformShader = await createShader("transform.wgsl");

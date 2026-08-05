@@ -1,5 +1,3 @@
-import { createShader } from "../../shader.js";
-
 class NoInstancesWarning extends Error {
     constructor(message, options) {
         const { entry } = options;
