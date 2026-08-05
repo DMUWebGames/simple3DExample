@@ -1,43 +1,33 @@
 performance.mark('space-scene-module');
 
-import { device } from "../setup.js";
-// import { cubeVertices } from "../cube.js";
-// import { sphericalVertices } from "../sphere.js";
 import { identityQuat, randomDirection, randomQuat, randomVector } from "../tools.js";
 import { loadMaterial } from "../material.js";
 import { cameraScript } from "../../scripts/camera.js";
 import { Scene } from "../Engine/scene.js";
+import { loadVertices } from "../mesh.js";
 
 // Systems
-import { TorqueSystem } from "../Engine/systems/torque.js";
-import { ForceSystem } from "../Engine/systems/force.js";
-import { GravitySystem } from "../Engine/systems/gravity.js";
-import { LocalForceSystem } from "../Engine/systems/localForce.js";
-import { MovementSystem } from "../Engine/systems/movement.js";
-import { RotationSystem } from "../Engine/systems/rotation.js";
-import { CameraSystem } from "../Engine/systems/camera.js";
 import { Renderer } from "../Engine/systems/renderer.js";
-import { TransformSystem } from "../Engine/systems/transform.js";
 import { ScriptingSystem } from "../Engine/systems/scripts.js";
-import { loadVertices } from "../mesh.js";
 
 const crateMaterial = await loadMaterial("materials/crate.json");
 const asteroidMaterial = await loadMaterial("materials/asteroid.json");
 const skyBoxMaterial = await loadMaterial("materials/skybox.json");
 
-performance.mark('space-scene-assets-loaded');
-performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-assets-loaded');
 
 const crateVertices = await loadVertices('meshes/cube.json');
 const asteroidVertices = await loadVertices('meshes/sphere_20.json');
 const skyBoxVertices = await loadVertices('meshes/sphere_50.json');
 
+performance.mark('space-scene-assets-loaded');
+performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-assets-loaded');
 
 export class SpaceScene extends Scene {
-    constructor(canvas, { size, nCrates, nAsteroids, asteroidSize }) {
+
+    constructor(device, canvas, { size, nCrates, nAsteroids, asteroidSize, layers }) {
         performance.mark('start-space-scene');
 
-        super(canvas, {
+        super(device, canvas, {
             maxEntities: nCrates + nAsteroids + 1 + 1 + 1, // camera, skybox, light
             components: {
                 Position: [0, 0, 0],
@@ -78,22 +68,10 @@ export class SpaceScene extends Scene {
         // Layers
         this.addLayer("scripts", [new ScriptingSystem(scripts, scriptData)]);
 
-        this.addLayer("physics", [
-            new GravitySystem(ctx),
-            new LocalForceSystem(ctx),
-            new ForceSystem(ctx),
-            new TorqueSystem(ctx)
-        ]);
+        this.addLayers(layers);
 
-        this.addLayer("simulation", [
-            new MovementSystem(ctx),
-            new RotationSystem(ctx),
-            new TransformSystem(ctx),
-        ]);
-        this.addLayer("render", [
-            new CameraSystem(ctx),
-            new Renderer(ctx)
-        ]);
+        //     new GravitySystem(ctx),
+        this.addLayer("render", [new Renderer(ctx)]);
 
         performance.mark('space-scene-configured');
         performance.measure('space-scene-initialisation', 'start-space-scene', 'space-scene-configured');
@@ -104,19 +82,19 @@ export class SpaceScene extends Scene {
 
         this.skyBoxId = this.skyBoxEntity({ size: this.size });
         this.cameraId = this.cameraEntity({
-            Size: -10, 
+            Size: 0.1, 
             Mass: 10,
             Orientation: identityQuat(),
             Position: [0, 0, 0],
             Camera: {
-                near: 1,
+                near: 0.1,
                 far: this.size * 2,
                 fov: 60
             }
         })
 
         new Array(nCrates).fill(0).forEach(() => {
-            const id = this.crateEntity({
+            this.crateEntity({
                 Size: 10,
                 Mass: 1000,
                 Position: randomVector(-this.size, this.size),
@@ -126,11 +104,11 @@ export class SpaceScene extends Scene {
 
         new Array(nAsteroids).fill(0).forEach(() => {
             const Size = asteroidSize.min + Math.random() * (asteroidSize.max - asteroidSize.min);
-            const id = this.asteroidEntity({
+            this.asteroidEntity({
                 Size,
                 Mass: Size * 100000,
                 Position: randomVector(-this.size, this.size),
-                Velocity: randomVector(-.1, .1)
+                Velocity: randomVector(-10, 10)
             });
         });
     }
@@ -282,22 +260,20 @@ export class SpaceScene extends Scene {
             activeEntities: this.world.getActive(),
             commands: this.commands,
             canvas: this.canvas,
-            device
+            device: this.device
         }
     }
 
-    update(deltaTime) {
+    update() {
         performance.mark(`${this.constructor.name} start`);
         const ctx = this.ctx;
         this.layers.get("scripts").update(ctx);
         this.commands.flush(ctx);
         this.layers.get("physics").update(ctx);
-        this.layers.get("simulation").update(ctx);
+        this.layers.get("transformations").update(ctx);
         this.layers.get("render").update(ctx);
         performance.mark(`${this.constructor.name} complete`);
         performance.measure(`${this.constructor.name} update`, `${this.constructor.name} start`, `${this.constructor.name} complete`);
     }
-
-
 
 }

@@ -1,7 +1,7 @@
-
 export class ComputeSystem { 
     constructor(config, { buffers, device }) { 
         this.label = config.label;
+        this.dimension = config.dimension ?? 1;
         this.pipeline = device.createComputePipeline({
             label: config.label,
             layout: "auto",
@@ -33,7 +33,10 @@ export class ComputeSystem {
         for (const id in this.bindgroups) {
             pass.setBindGroup(id, this.bindgroups[id]);
         }
-        pass.dispatchWorkgroups(Math.ceil(world.maxEntities / 64));
+        const dispatchCount = Math.ceil(world.maxEntities / 64);
+        const props = Array(this.dimension).fill(dispatchCount);
+        
+        pass.dispatchWorkgroups(...props);
         pass.end();
         device.queue.submit([encoder.finish()]);
     }

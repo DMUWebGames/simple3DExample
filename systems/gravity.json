@@ -1,0 +1,4 @@
+{
+    "shader": "gravity.wgsl",
+    "groups": [["Force", "Mass", "Position", "gravityConfig"]]
+}

@@ -1,15 +1,34 @@
+import { createShader } from "../shader.js";
 import { CommandQueue } from "./CommandQueue.js";
 import { EntityFramework } from "./ECS/Framework.js";
 import { GPUBufferManager } from "./GPUBuffers.js";
 import { Layer } from "./Layer.js";
 import { ResourceRegistry } from "./ResourceRegistry.js";
+import { ComputeSystem } from "./systems/compute.js";
 
-// import { canvas } from "../setup.js";
+async function loadSystem(name) {
+    const response = await fetch(`./systems/${name}.json`);
+    const system = await response.json();
+    system.module = await createShader(system.shader);
+    system.label = system.shader.split(".").slice(0, -1).join(".");
+    return system;
+}
 
 export class Scene {
 
-    constructor(canvas, config) { 
+    static async create(device, canvas, config) {
+        performance.mark('scene-create-0');
+        for (const layer of config.layers) {
+            layer.systems = await Promise.all(layer.systems.map(loadSystem));
+        }
+        performance.mark('scene-create-1');
+        performance.measure("shaders loaded", "scene-create-0", "scene-create-1");
+        return new this(device, canvas, config);
+    }
+
+    constructor(device, canvas, config) { 
         performance.mark('scene start');
+        this.device = device;
         this.canvas = canvas;
         this.world = new EntityFramework(config);
         this.commands = new CommandQueue();
@@ -43,6 +62,18 @@ export class Scene {
     }
     addLayer(name, systems) {
         this.layers.set(name, new Layer(systems));
+    }
+
+    addLayers(layers) {
+        for (const layer of layers) {
+            const systems = layer.systems.map((layer) => { 
+                return new ComputeSystem(layer, {
+                    buffers: this.buffers,
+                    device: this.device
+                });
+            })
+            this.addLayer(layer.label, systems);
+        }
     }
 
     addRenderable(label, vertices, material, { stride }) { 

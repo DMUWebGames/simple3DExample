@@ -1,0 +1,4 @@
+{
+    "shader": "localForce.wgsl",
+    "groups": [["Force", "Thrust", "Orientation"]]
+}

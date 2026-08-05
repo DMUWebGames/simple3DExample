@@ -36,10 +36,8 @@ export class GPUBufferManager {
     }
 
     createVertex({ label, vertices, stride }) {
-        
         this.create({ label, data: vertices, usage: VERTEX });
         this.bufferInfo.set(label, { stride, length: vertices.length / stride });
-        console.log(label, vertices.length, stride);
         return this.getVertex(label);
     }
 
@@ -72,8 +70,7 @@ export class GPUBufferManager {
     }
 
     get(label) {
-        console.log(label);
-        
+        // console.log(label);
         return this.buffers.get(label);
     }
 
