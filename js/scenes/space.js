@@ -1,30 +1,25 @@
 performance.mark('space-scene-module');
 
-import { EntityFramework } from "../Engine/ECS/Framework.js";
 import { device } from "../setup.js";
-import { cubeVertices, cubeVertexBuffer } from "../cube.js";
-import { sphericalVertices } from "../sphere.js";
-import { identityQuat, randomDirection, randomQuat, randomQuatBetween, randomVector } from "../tools.js";
+// import { cubeVertices } from "../cube.js";
+// import { sphericalVertices } from "../sphere.js";
+import { identityQuat, randomDirection, randomQuat, randomVector } from "../tools.js";
 import { loadMaterial } from "../material.js";
 import { cameraScript } from "../../scripts/camera.js";
-import { GPUBufferManager } from "../Engine/GPUBuffers.js";
-import { ResourceRegistry } from "../Engine/ResourceRegistry.js";
-import { CommandQueue } from "../Engine/CommandQueue.js";
 import { Scene } from "../Engine/scene.js";
 
 // Systems
-import { AccelerationSystem } from "../Engine/systems/acceleration.js";
 import { TorqueSystem } from "../Engine/systems/torque.js";
 import { ForceSystem } from "../Engine/systems/force.js";
 import { GravitySystem } from "../Engine/systems/gravity.js";
 import { LocalForceSystem } from "../Engine/systems/localForce.js";
 import { MovementSystem } from "../Engine/systems/movement.js";
 import { RotationSystem } from "../Engine/systems/rotation.js";
-import { LightingSystem } from "../Engine/systems/lighting.js";
 import { CameraSystem } from "../Engine/systems/camera.js";
 import { Renderer } from "../Engine/systems/renderer.js";
 import { TransformSystem } from "../Engine/systems/transform.js";
 import { ScriptingSystem } from "../Engine/systems/scripts.js";
+import { loadVertices } from "../mesh.js";
 
 const crateMaterial = await loadMaterial("materials/crate.json");
 const asteroidMaterial = await loadMaterial("materials/asteroid.json");
@@ -33,9 +28,13 @@ const skyBoxMaterial = await loadMaterial("materials/skybox.json");
 performance.mark('space-scene-assets-loaded');
 performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-assets-loaded');
 
+const cubeVertices = await loadVertices('meshes/cube.json');
+const asteroidVertices = await loadVertices('meshes/sphere_20.json');
+const skyBoxVertices = await loadVertices('meshes/sphere_50.json');
+
 
 export class SpaceScene extends Scene {
-    constructor(canvas, { size, nCrates, nAsteroids }) {
+    constructor(canvas, { size, nCrates, nAsteroids, asteroidSize }) {
         performance.mark('start-space-scene');
 
         super(canvas, {
@@ -61,8 +60,9 @@ export class SpaceScene extends Scene {
         this.size = size;
        
         this.createVertexBuffers();
-        this.createEntities({ nCrates, nAsteroids });
+        this.createEntities({ nCrates, nAsteroids, asteroidSize });
         this.createUniformBuffers();
+        this.createInstanceBuffers();
 
         // set up scripts
         const scripts = [cameraScript]
@@ -72,17 +72,14 @@ export class SpaceScene extends Scene {
             brake: -100
         }]
 
-        this.createBuffers();
 
         const ctx = this.ctx;
 
         // Layers
-        this.addLayer("scripts", [
-            new ScriptingSystem(scripts, scriptData)
-        ]);
+        this.addLayer("scripts", [new ScriptingSystem(scripts, scriptData)]);
 
         this.addLayer("physics", [
-            // new GravitySystem(ctx),
+            new GravitySystem(ctx),
             new LocalForceSystem(ctx),
             new ForceSystem(ctx),
             new TorqueSystem(ctx)
@@ -95,9 +92,7 @@ export class SpaceScene extends Scene {
         ]);
         this.addLayer("render", [
             new CameraSystem(ctx),
-            // new LightingSystem(ctx),
             new Renderer(ctx)
-            // new ConcreteRenderer(ctx)
         ]);
 
         performance.mark('space-scene-configured');
@@ -105,25 +100,11 @@ export class SpaceScene extends Scene {
 
     }
 
-    createEntities({ nAsteroids, nCrates }) {
+    createEntities({ nAsteroids, nCrates, asteroidSize }) {
 
-        this.background = this.backgroundEntity({ size: this.size });
-        // this.background = this.world.createEntity();
-        // this.world.addComponent(this.background, "Scale", [this.size, this.size, this.size]);
-        // this.world.addComponent(this.background, "Position", [0, 0, 0]);
-        // this.world.addComponent(this.background, "Orientation", identityQuat());
-        // this.world.addComponent(this.background, "Mass", 0.1);
-        // this.world.addComponent(this.background, "Velocity", [0, 0, 0]);
-        // this.world.addComponent(this.background, "AngularVelocity", [0, 0, 0]);
-        // this.world.addComponent(this.background, "Renderable", this.skyBoxRenderableId);
-        // this.world.addComponent(this.background, "Force", [0, 0, 0]);
-        // this.world.addComponent(this.background, "Torque", [0, 0, 0]);
-        // this.world.addComponent(this.background, "Transform", Array(16).fill(0));
-
-
-        // Camera
+        this.skyBoxId = this.skyBoxEntity({ size: this.size });
         this.cameraId = this.cameraEntity({
-            Size: 10, 
+            Size: -10, 
             Mass: 10,
             Orientation: identityQuat(),
             Position: [0, 0, 0],
@@ -144,10 +125,10 @@ export class SpaceScene extends Scene {
         });
 
         new Array(nAsteroids).fill(0).forEach(() => {
-            const Size = 5 + Math.random() * 10;
+            const Size = asteroidSize.min + Math.random() * (asteroidSize.max - asteroidSize.min);
             const id = this.asteroidEntity({
                 Size,
-                Mass: Size * 10000000,
+                Mass: Size * 100000,
                 Position: randomVector(-this.size, this.size),
                 Velocity: randomVector(-.1, .1)
             });
@@ -213,7 +194,7 @@ export class SpaceScene extends Scene {
         return id;
     }
 
-    backgroundEntity({ size }) {
+    skyBoxEntity({ size }) {
         const id = this.baseEntity({
             Scale: Array(3).fill(size),
             Position: [0, 0, 0],
@@ -229,52 +210,49 @@ export class SpaceScene extends Scene {
     createVertexBuffers() { 
         // Vertex buffers
         this.buffers.createVertex({
-            label: "cube vertices",
+            label: "crate vertices",
             data: cubeVertices,
             length: cubeVertices.length / 8
         });
 
-        const mySphericalVertices = sphericalVertices(20, 1);
         this.buffers.createVertex({
-            label: "sphere vertices",
-            data: mySphericalVertices,
-            length: mySphericalVertices.length / 8
+            label: "asteroid vertices",
+            data: asteroidVertices,
+            length: asteroidVertices.length / 8
         });
-        
+
+        this.buffers.createVertex({
+            label: "skybox vertices",
+            data: skyBoxVertices,
+            length: skyBoxVertices.length / 8
+        });
+
         // Rendering data for Crates
         this.crateRenderableId = this.renderables.set("crate", {
-            vertexBuffer: this.buffers.get("cube vertices"),
+            vertexBuffer: this.buffers.get("crate vertices"),
             vertexCount: cubeVertices.length / 8,
             material: crateMaterial
         });
         
         // Rendering data for Asteroids
         this.asteroidRenderableId = this.renderables.set("asteroid", {
-            vertexBuffer: this.buffers.get("sphere vertices"),
-            vertexCount: mySphericalVertices.length / 8,
+            vertexBuffer: this.buffers.get("asteroid vertices"),
+            vertexCount: asteroidVertices.length / 8,
             material: asteroidMaterial
         });
 
-        // Rendering data for the background
-        this.skyBoxRenderableId = this.renderables.set("background", {
-            vertexBuffer: this.buffers.get("sphere vertices"),
-            vertexCount: mySphericalVertices.length / 8,
+        // Rendering data for the skybox
+        this.skyBoxRenderableId = this.renderables.set("skybox", {
+            vertexBuffer: this.buffers.get("skybox vertices"),
+            vertexCount: skyBoxVertices.length / 8,
             material: skyBoxMaterial
         });
-
-
-
-
-
     }
 
-    createBuffers() { 
-
-
+    createInstanceBuffers() { 
         // Storage buffers for all components
         this.buffers.createFromWorld(this.world);
         this.buffers.indexBy(this.world, "Renderable", 0);
-
     }
 
     createUniformBuffers() { 
@@ -285,7 +263,12 @@ export class SpaceScene extends Scene {
 
         this.buffers.createUniform({
             label: "gravityConfig",
-            data: new Float32Array([10000, 10, this.size, 0])
+            data: new Float32Array([
+                10,                     // G
+                1,                      // minDistance
+                this.size / 50,        // maxDistance
+                0                       // pad
+            ])
         });
 
         this.buffers.createUniform({
