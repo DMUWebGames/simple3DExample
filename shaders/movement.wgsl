@@ -13,11 +13,22 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     var position = positions[i];
     position += velocities[i] * deltaTime;
 
-    let max_dist = size + length(scales[i]) / 2;
-    // wrap if necessary
+    let max_dist = size - length(scales[i]) / 2;
+
+    // If they hit the edge
     if (length(position) > max_dist) {
-        let direction = position / length(position);
-        position = -direction * max_dist;
+
+        let normal = normalize(position);
+
+        // Place back on boundary
+        position = normal * max_dist;
+
+        let v = velocities[i];
+
+        // Only bounce if moving away from centre
+        if (dot(v, normal) > 0.0) {
+            velocities[i] = reflect(v, normal) * 0.99;
+        }
     }
     positions[i] = position;
 }
