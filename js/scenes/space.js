@@ -1,23 +1,12 @@
 performance.mark('space-scene-module');
 
 import { identityQuat, randomDirection, randomQuat, randomVector } from "../tools.js";
-import { loadMaterial } from "../material.js";
 import { cameraScript } from "../../scripts/camera.js";
 import { Scene } from "../Engine/scene.js";
-import { loadVertices } from "../mesh.js";
 
 // Systems
 import { Renderer } from "../Engine/systems/renderer.js";
 import { ScriptingSystem } from "../Engine/systems/scripts.js";
-
-const crateMaterial = await loadMaterial("crate");
-const asteroidMaterial = await loadMaterial("asteroid");
-const skyBoxMaterial = await loadMaterial("skybox");
-
-
-const crateVertices = await loadVertices('./data/meshes/cube.json');
-const asteroidVertices = await loadVertices('./data/meshes/sphere_20.json');
-const skyBoxVertices = await loadVertices('./data/meshes/sphere_50.json');
 
 performance.mark('space-scene-assets-loaded');
 performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-assets-loaded');
@@ -26,14 +15,14 @@ export class SpaceScene extends Scene {
 
     constructor(device, canvas, { size, nCrates, nAsteroids, asteroidSize, layers, models, components}) {
         performance.mark('start-space-scene');
-        super(device, canvas, {
+       
+        super(device, canvas, models, layers, {
             maxEntities: nCrates + nAsteroids + 1 + 1 + 1,
             components
         });
 
         this.size = size;
        
-        this.createVertexBuffers();
         this.createEntities({ nCrates, nAsteroids, asteroidSize });
         this.createUniformBuffers();
         this.createInstanceBuffers();
@@ -45,25 +34,25 @@ export class SpaceScene extends Scene {
             thrust: -150,
             brake: -100
         }]
+
         this.scripts = new ScriptingSystem(scripts, scriptData);
 
         // Layers
         const ctx = this.ctx;
-
         this.addLayers(layers);
-
-        //     new GravitySystem(ctx),
         this.renderer = new Renderer(ctx);
-        this.addLayer("render", [this.renderer]);
-
         performance.mark('space-scene-configured');
         performance.measure('space-scene-initialisation', 'start-space-scene', 'space-scene-configured');
-
     }
 
     createEntities({ nAsteroids, nCrates, asteroidSize }) {
 
-        this.skyBoxId = this.skyBoxEntity({ size: this.size });
+        this.skyBoxId = this.skyBoxEntity({
+            size: this.size,
+            renderable: this.renderables.indexOf("skybox")
+
+        });
+
         this.cameraId = this.cameraEntity({
             Size: 0.1, 
             Mass: 10,
@@ -78,10 +67,11 @@ export class SpaceScene extends Scene {
 
         new Array(nCrates).fill(0).forEach(() => {
             this.crateEntity({
-                Size: 10,
+                Size: 1,
                 Mass: 1000,
                 Position: randomVector(-this.size, this.size),
-                Velocity: randomVector(-100, 100)
+                Velocity: randomVector(-10, 10),
+                renderable: this.renderables.indexOf("crate")
             });
         });
 
@@ -91,7 +81,8 @@ export class SpaceScene extends Scene {
                 Size,
                 Mass: Size * 100000,
                 Position: randomVector(-this.size, this.size),
-                Velocity: randomVector(-10, 10)
+                Velocity: randomVector(-10, 10),
+                renderable: this.renderables.indexOf("asteroid")
             });
         });
     }
@@ -114,7 +105,7 @@ export class SpaceScene extends Scene {
         })
     }
 
-    crateEntity({ Size, Mass, Position, Velocity }) { 
+    crateEntity({ Size, Mass, Position, Velocity, renderable }) { 
         const id = this.baseEntity({
             Scale: Array(3).fill(Size),
             Position,
@@ -123,11 +114,11 @@ export class SpaceScene extends Scene {
             Velocity,
             AngularVelocity: randomVector(-1, 1)
         });
-        this.world.addComponent(id, "renderable", this.crateRenderableId);
+        this.world.addComponent(id, "renderable", renderable);
         return id;
     }
 
-    asteroidEntity({ Size, Mass, Position, Velocity }) {
+    asteroidEntity({ Size, Mass, Position, Velocity, renderable }) {
         const id = this.baseEntity({
             Scale: Array(3).fill(Size),
             Position,
@@ -136,7 +127,7 @@ export class SpaceScene extends Scene {
             Velocity,
             AngularVelocity: randomVector(-.1, .1),
         });
-        this.world.addComponent(id, "renderable", this.asteroidRenderableId);
+        this.world.addComponent(id, "renderable", renderable);
         return id;
     }
 
@@ -156,40 +147,17 @@ export class SpaceScene extends Scene {
         return id;
     }
 
-    skyBoxEntity({ size }) {
+    skyBoxEntity({ size, renderable }) {
         const id = this.baseEntity({
             Scale: Array(3).fill(size),
             Position: [0, 0, 0],
             Orientation: identityQuat(),
             Mass: 0.1,
             Velocity: [0, 0, 0],
-            AngularVelocity: [0, 0, 0]
+            AngularVelocity: [0, 0, 0],
         });
-        this.world.addComponent(id, "renderable", this.skyBoxRenderableId);
+        this.world.addComponent(id, "renderable", renderable);
         return id;
-    }
-
-    createVertexBuffers() { 
-        this.crateRenderableId = this.addRenderable(
-            "crate",
-            crateVertices,
-            crateMaterial,
-            {stride: 8}
-        )
-
-        this.asteroidRenderableId = this.addRenderable(
-            "asteroid",
-            asteroidVertices,
-            asteroidMaterial,
-            {stride: 8}
-        )
-
-        this.skyBoxRenderableId = this.addRenderable(
-            "skybox",
-            skyBoxVertices,
-            skyBoxMaterial,
-            {stride: 8}
-        )
     }
 
     createInstanceBuffers() { 
@@ -256,10 +224,7 @@ export class SpaceScene extends Scene {
         for (const layer of this.layers.values()) {
             layer.update(ctx);
         }
-        // this.layers.get("physics").update(ctx);
-        // this.layers.get("transformations").update(ctx);
-        // this.layers.get("render").update(ctx);
-        // this.renderer.update(ctx);
+        this.renderer.update(ctx);
         performance.mark(`${this.constructor.name} complete`);
         performance.measure(`${this.constructor.name} update`, `${this.constructor.name} start`, `${this.constructor.name} complete`);
     }

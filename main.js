@@ -6,7 +6,7 @@ import { device, canvas } from "./js/setup.js";
 
 const scene = await SpaceScene.create(device, canvas, {
     size: 100,
-    nCrates: 0,
+    nCrates: 100,
     nAsteroids: 100,
     asteroidSize: { min: 1, max: 1 },
     components: [

@@ -9,7 +9,6 @@ import { ResourceRegistry } from "./ResourceRegistry.js";
 import { ScriptManager } from "./ScriptManager.js";
 import { ComputeSystem } from "./systems/compute.js";
 
-
 export class Scene {
 
     static async create(device, canvas, config) {
@@ -24,11 +23,12 @@ export class Scene {
         return new this(device, canvas, config);
     }
 
-    constructor(device, canvas, config) { 
+    constructor(device, canvas, models, layers, config) { 
         performance.mark('scene start');
         this.device = device;
         this.canvas = canvas;
-        this.models = config.models;
+        this.models = models;
+        this.layers = layers;
         this.world = new EntityFramework(config);
         this.commands = new CommandQueue();
         this.layers = new Map();
@@ -37,9 +37,23 @@ export class Scene {
         this.input = new ResourceRegistry();
         this.misc = new ResourceRegistry();
         this.scripts = new ScriptManager();
-        this.__createUniformBuffers();
+
+
         this.initMouse();
         this.initKeys();
+        this.__createRenderables();
+        this.__createUniformBuffers();
+        
+        // can't initialise systems until the buffers are set up
+        // console.log(layers);
+        // this.addLayers(layers);
+        // this.renderer = new Renderer({
+        //     buffers: this.buffers,
+        //     device: this.device,
+        //     canvas: this.canvas,
+        //     renderables: this.renderables
+        // });
+
         performance.mark('scene end');
         performance.measure('scene init', 'scene start', 'scene end');
     }
@@ -76,6 +90,13 @@ export class Scene {
         }
     }
 
+    __createRenderables() { 
+        for (const key in this.models) {
+            const { mesh, material } = this.models[key];
+            this.addRenderable(key, mesh.vertices, material, { stride: mesh.stride });            
+        }
+    }
+
     addRenderable(label, vertices, material, { stride }) { 
         const { buffer, length } = this.buffers.createVertex({
             label: `${label} vertices (stride: ${stride})`,
@@ -95,6 +116,9 @@ export class Scene {
         for (const layer of this.layers.values()) {
             layer.resize(canvas);            
         }
+
+        // wait, this needs to be created by the spaceScene!
+        this.renderer.resize(canvas);
     }
 
     initMouse() { 
