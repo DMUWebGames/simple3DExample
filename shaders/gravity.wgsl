@@ -4,7 +4,7 @@
 @group(0) @binding(3) var<uniform> gravityConfig: GravityConfig;
 
 struct GravityConfig {
-    G: f32,
+    g: f32,
     minDistance: f32,
     maxDistance: f32,
     _pad: f32
@@ -40,8 +40,8 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let distance = sqrt(distanceSquared);
     let direction = delta / max(distance, 0.0001);
-    let strength = gravityConfig.G * massI * massJ / distanceSquared;
+    let strength = gravityConfig.g * massI * massJ / distanceSquared;
     let gravityForce = direction * strength;
 
-    forces[i] += vec3(10, 1, 2);//gravityForce;
+    forces[i] = gravityForce;
 }
