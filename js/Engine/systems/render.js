@@ -1,5 +1,15 @@
 import { createShader } from "../../shader.js";
 
+class NoInstancesWarning extends Error {
+    constructor(message, options) {
+        const { entry } = options;
+        super(message, options);
+        this.entry = entry;
+    }
+};
+
+
+
 export class RenderSystem { 
     constructor(config, { buffers, device, canvas, renderables }) { 
         this.label = config.label;
@@ -16,11 +26,19 @@ export class RenderSystem {
 
         this.pipelines = new Map();
         for (const renderable of renderables) {
-            this.pipelines.set(renderable.name, new RenderPipeline(config.groups, renderable, {
-                sampler: this.sampler,
-                format: this.format,
-                buffers, device
-            }));
+            try {
+                this.pipelines.set(renderable.name, new RenderPipeline(config.groups, renderable, {
+                    sampler: this.sampler,
+                    format: this.format,
+                    buffers, device
+                }));
+            } catch (err) {
+                if (err instanceof NoInstancesWarning) {
+                    console.warn(err.message, err.entry);
+                } else {
+                    throw err;
+                }
+            }
         }
     }
 
@@ -62,6 +80,7 @@ export class RenderSystem {
 
 
 }
+
 
 class RenderPipeline {
     constructor(groups, renderable, { sampler, format, buffers, device }) {
@@ -111,7 +130,11 @@ class RenderPipeline {
         }
         const buffer = this.buffers.get(entry.key);
         if (entry.type == "index") { 
-            this.instanceCount = buffer.size / 4;
+            try {
+                this.instanceCount = buffer.size / 4 || 0;
+            } catch (err) {
+                throw new NoInstancesWarning(`${entry.key} has no data`, {cause: err, entry});
+            }
         }
         return { binding: i, resource: { buffer } }
     }
