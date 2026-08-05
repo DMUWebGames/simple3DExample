@@ -70,7 +70,6 @@ export class GPUBufferManager {
     }
 
     get(label) {
-        // console.log(label);
         return this.buffers.get(label);
     }
 

@@ -1,0 +1,4 @@
+{
+    "shader": "torque.wgsl",
+    "groups": [["torque", "angularVelocity", "mass", "deltaTime"]]
+}

@@ -10,43 +10,27 @@ import { loadVertices } from "../mesh.js";
 import { Renderer } from "../Engine/systems/renderer.js";
 import { ScriptingSystem } from "../Engine/systems/scripts.js";
 
-const crateMaterial = await loadMaterial("materials/crate.json");
-const asteroidMaterial = await loadMaterial("materials/asteroid.json");
-const skyBoxMaterial = await loadMaterial("materials/skybox.json");
+const crateMaterial = await loadMaterial("crate");
+const asteroidMaterial = await loadMaterial("asteroid");
+const skyBoxMaterial = await loadMaterial("skybox");
 
 
-const crateVertices = await loadVertices('meshes/cube.json');
-const asteroidVertices = await loadVertices('meshes/sphere_20.json');
-const skyBoxVertices = await loadVertices('meshes/sphere_50.json');
+const crateVertices = await loadVertices('./data/meshes/cube.json');
+const asteroidVertices = await loadVertices('./data/meshes/sphere_20.json');
+const skyBoxVertices = await loadVertices('./data/meshes/sphere_50.json');
 
 performance.mark('space-scene-assets-loaded');
 performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-assets-loaded');
 
 export class SpaceScene extends Scene {
 
-    constructor(device, canvas, { size, nCrates, nAsteroids, asteroidSize, layers }) {
+    constructor(device, canvas, { size, nCrates, nAsteroids, asteroidSize, layers, models, components}) {
         performance.mark('start-space-scene');
-
         super(device, canvas, {
-            maxEntities: nCrates + nAsteroids + 1 + 1 + 1, // camera, skybox, light
-            components: {
-                Position: [0, 0, 0],
-                Velocity: [0, 0, 0],
-                Force: [0, 0, 0],
-                Thrust: [0, 0, 0],
-                Orientation: [0, 0, 0, 0],
-                AngularVelocity: [0, 0, 0],
-                Torque: [0, 0, 0],
-                Mass: 0,
-                Scale: [1, 1, 1],
-                Transform: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1],
-                Renderable: 0,
-                Scriptable: { scriptId: 0, argumentId: 0 },
-                Camera: { near: 0, far: 0, fov: 0, _pad: 0 },
-                RenderCamera: { viewProjMatrix: Array(16).fill(0), position: Array(3).fill(0) }
-            }
+            maxEntities: nCrates + nAsteroids + 1 + 1 + 1,
+            components
         });
-        
+
         this.size = size;
        
         this.createVertexBuffers();
@@ -61,17 +45,16 @@ export class SpaceScene extends Scene {
             thrust: -150,
             brake: -100
         }]
-
-
-        const ctx = this.ctx;
+        this.scripts = new ScriptingSystem(scripts, scriptData);
 
         // Layers
-        this.addLayer("scripts", [new ScriptingSystem(scripts, scriptData)]);
+        const ctx = this.ctx;
 
         this.addLayers(layers);
 
         //     new GravitySystem(ctx),
-        this.addLayer("render", [new Renderer(ctx)]);
+        this.renderer = new Renderer(ctx);
+        this.addLayer("render", [this.renderer]);
 
         performance.mark('space-scene-configured');
         performance.measure('space-scene-initialisation', 'start-space-scene', 'space-scene-configured');
@@ -116,7 +99,8 @@ export class SpaceScene extends Scene {
     createEntity(components) {
         const id = this.world.createEntity();
         for (const [key, value] of Object.entries(components)) {
-            this.world.addComponent(id, key, value);
+            const k = `${key[0].toLowerCase()}${key.slice(1)}`;
+            this.world.addComponent(id, k, value);
         }
         return id;
     }
@@ -139,7 +123,7 @@ export class SpaceScene extends Scene {
             Velocity,
             AngularVelocity: randomVector(-1, 1)
         });
-        this.world.addComponent(id, "Renderable", this.crateRenderableId);
+        this.world.addComponent(id, "renderable", this.crateRenderableId);
         return id;
     }
 
@@ -152,7 +136,7 @@ export class SpaceScene extends Scene {
             Velocity,
             AngularVelocity: randomVector(-.1, .1),
         });
-        this.world.addComponent(id, "Renderable", this.asteroidRenderableId);
+        this.world.addComponent(id, "renderable", this.asteroidRenderableId);
         return id;
     }
 
@@ -165,10 +149,10 @@ export class SpaceScene extends Scene {
             Velocity: [0, 0, 0],
             AngularVelocity: [0, 0, 0]
         });
-        this.world.addComponent(id, "Camera", Camera);
-        this.world.addComponent(id, "Thrust", [0, 0, 0]);
-        this.world.addComponent(id, "Scriptable", [0, 0]);
-        this.world.addComponent(id, "RenderCamera", { viewProjMatrix: Array(16).fill(0), position: Array(3).fill(0) });
+        this.world.addComponent(id, "camera", Camera);
+        this.world.addComponent(id, "thrust", [0, 0, 0]);
+        this.world.addComponent(id, "scriptable", [0, 0]);
+        this.world.addComponent(id, "renderCamera", { viewProjMatrix: Array(16).fill(0), position: Array(3).fill(0) });
         return id;
     }
 
@@ -181,7 +165,7 @@ export class SpaceScene extends Scene {
             Velocity: [0, 0, 0],
             AngularVelocity: [0, 0, 0]
         });
-        this.world.addComponent(id, "Renderable", this.skyBoxRenderableId);
+        this.world.addComponent(id, "renderable", this.skyBoxRenderableId);
         return id;
     }
 
@@ -211,7 +195,7 @@ export class SpaceScene extends Scene {
     createInstanceBuffers() { 
         // Storage buffers for all components
         this.buffers.createFromWorld(this.world);
-        this.buffers.indexBy(this.world, "Renderable", 0);
+        this.buffers.indexBy(this.world, "renderable", 0);
     }
 
     createUniformBuffers() { 
@@ -267,11 +251,15 @@ export class SpaceScene extends Scene {
     update() {
         performance.mark(`${this.constructor.name} start`);
         const ctx = this.ctx;
-        this.layers.get("scripts").update(ctx);
+        this.scripts.update(ctx);
         this.commands.flush(ctx);
-        this.layers.get("physics").update(ctx);
-        this.layers.get("transformations").update(ctx);
-        this.layers.get("render").update(ctx);
+        for (const layer of this.layers.values()) {
+            layer.update(ctx);
+        }
+        // this.layers.get("physics").update(ctx);
+        // this.layers.get("transformations").update(ctx);
+        // this.layers.get("render").update(ctx);
+        // this.renderer.update(ctx);
         performance.mark(`${this.constructor.name} complete`);
         performance.measure(`${this.constructor.name} update`, `${this.constructor.name} start`, `${this.constructor.name} complete`);
     }

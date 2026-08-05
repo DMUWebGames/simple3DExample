@@ -14,11 +14,11 @@ export class Renderer extends RenderSystem {
                         "type": "index",
                         "key": (id) => `renderableIndices_${id}`
                     },
-                    "Transform"
+                    "transform"
                 ],
                 [
                     "phongLight",
-                    "RenderCamera",
+                    "renderCamera",
                     "activeCamera"
                 ]
             ]

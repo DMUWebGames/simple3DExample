@@ -1,0 +1,4 @@
+{
+    "shader": "camera.wgsl",
+    "groups": [["position", "orientation", "camera", "renderCamera", "activeCamera", "canvas"]]
+}

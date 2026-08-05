@@ -22,9 +22,6 @@ export function randomQuatBetween(min=0, max=1) {
     return Array.from(quat.normalize(q));
 }
 
-// console.log(mat4.fromQuat(randomQuat()));
-
-
 export function mappedBuffer(device, data, args) { 
     const buffer = device.createBuffer({
         ...args,

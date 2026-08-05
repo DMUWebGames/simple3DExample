@@ -1,0 +1,4 @@
+{
+    "shader": "transform.wgsl",
+    "groups": [["position", "orientation", "scale", "transform"]]
+}

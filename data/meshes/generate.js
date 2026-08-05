@@ -1,9 +1,10 @@
-import { cubeVertices } from "../js/cube.js";
-import { sphericalVertices } from "../js/sphere.js";
+import { cubeVertices } from "../../js/cube.js";
+import { sphericalVertices } from "../../js/sphere.js";
 
 function toJSON(data) {
     return JSON.stringify({
         vertices: Array.from(data),
+        stride: 8
     }, null, 2);
 }
 

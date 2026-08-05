@@ -1,23 +1,21 @@
-import { createShader } from "../shader.js";
+import { loadComponent } from "../components.js";
+import { loadModel } from "../model.js";
+import { loadSystem } from "../system.js";
 import { CommandQueue } from "./CommandQueue.js";
 import { EntityFramework } from "./ECS/Framework.js";
 import { GPUBufferManager } from "./GPUBuffers.js";
 import { Layer } from "./Layer.js";
 import { ResourceRegistry } from "./ResourceRegistry.js";
+import { ScriptManager } from "./ScriptManager.js";
 import { ComputeSystem } from "./systems/compute.js";
 
-async function loadSystem(name) {
-    const response = await fetch(`./systems/${name}.json`);
-    const system = await response.json();
-    system.module = await createShader(system.shader);
-    system.label = system.shader.split(".").slice(0, -1).join(".");
-    return system;
-}
 
 export class Scene {
 
     static async create(device, canvas, config) {
         performance.mark('scene-create-0');
+        config.components = Object.fromEntries(await Promise.all(config.components.map(async (c) => [c, await loadComponent(c)])));
+        config.models = Object.fromEntries(await Promise.all(config.models.map(async (m) => [m, await loadModel(m)])));
         for (const layer of config.layers) {
             layer.systems = await Promise.all(layer.systems.map(loadSystem));
         }
@@ -30,6 +28,7 @@ export class Scene {
         performance.mark('scene start');
         this.device = device;
         this.canvas = canvas;
+        this.models = config.models;
         this.world = new EntityFramework(config);
         this.commands = new CommandQueue();
         this.layers = new Map();
@@ -37,6 +36,7 @@ export class Scene {
         this.renderables = new ResourceRegistry();
         this.input = new ResourceRegistry();
         this.misc = new ResourceRegistry();
+        this.scripts = new ScriptManager();
         this.__createUniformBuffers();
         this.initMouse();
         this.initKeys();

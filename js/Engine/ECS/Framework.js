@@ -19,9 +19,8 @@ class Query {
 }
 
 export class EntityFramework {
-    constructor(config = {}) {
-        this.maxEntities = config.maxEntities || 10000;
-        this.config = config;
+    constructor({components, maxEntities}) {
+        this.maxEntities = maxEntities;
 
         // Core systems
         this.componentRegistry = new ComponentRegistry();
@@ -30,18 +29,11 @@ export class EntityFramework {
         this.pools = {};
 
         // Register components from config
-        if (config.components) {
-            for (const [name, def] of Object.entries(config.components)) {
+        if (components) {
+            for (const [name, def] of Object.entries(components)) {
                 this.registerComponent(name, def);
             }
         }
-
-        // Performance tracking
-        this.stats = {
-            frameTime: 0,
-            systemTimes: {},
-            entityCount: 0
-        };
     }
 
     registerComponent(name, defaultValue = {}) {
@@ -111,10 +103,6 @@ export class EntityFramework {
             if (bit) mask |= bit;
         }
         return new Query(mask);
-    }
-
-    getStats() {
-        return { ...this.stats };
     }
 
     getEntityCount() {

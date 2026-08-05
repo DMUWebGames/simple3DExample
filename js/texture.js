@@ -2,7 +2,7 @@ import { device } from "./setup.js";
 
 export async function loadTexture(url, label) {
     if (!label) label = url;
-    const res = await fetch(`./textures/${url}`);
+    const res = await fetch(`./data/textures/${url}`);
     const blob = await res.blob();
     const source = await createImageBitmap(blob, { colorSpaceConversion: 'none' });
     const texture = device.createTexture({

@@ -9,6 +9,27 @@ const scene = await SpaceScene.create(device, canvas, {
     nCrates: 0,
     nAsteroids: 100,
     asteroidSize: { min: 1, max: 1 },
+    components: [
+        "position",
+        "velocity",
+        "force",
+        "thrust",
+        "orientation",
+        "angularVelocity",
+        "torque",
+        "mass",
+        "scale",
+        "transform",
+        "renderable",
+        "scriptable",
+        "camera",
+        "renderCamera"
+    ],
+    models: ["skybox", "crate", "asteroid"],
+    entities: [{
+        "model": "asteroid",
+        "count": 100,
+    }],
     layers: [
         {
             label: "physics",

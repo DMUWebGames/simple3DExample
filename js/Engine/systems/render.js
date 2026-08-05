@@ -21,7 +21,6 @@ export class RenderSystem {
         });
         this.depthTexture = null;
         this.sampler = device.createSampler();
-
         this.pipelines = new Map();
         for (const renderable of renderables) {
             try {

@@ -15,7 +15,7 @@ export function cameraScript(entityId, { torque, thrust, brake }, ctx) {
         ];
         thrustData = [0, 0, (keys.w * thrust - keys.s * brake)];
     }
-    commands.push({ type: "write", entityId, component: "Torque", data: new Float32Array([...torqueData, 0])});
-    commands.push({ type: "write", entityId, component: "Thrust", data: new Float32Array(thrustData)});
+    commands.push({ type: "write", entityId, component: "torque", data: new Float32Array([...torqueData, 0])});
+    commands.push({ type: "write", entityId, component: "thrust", data: new Float32Array(thrustData)});
 }
 

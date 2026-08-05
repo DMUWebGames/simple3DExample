@@ -1,4 +1,0 @@
-{
-    "shader": "rotation.wgsl",
-    "groups": [["Orientation", "AngularVelocity", "deltaTime"]]
-}

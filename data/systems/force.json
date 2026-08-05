@@ -1,0 +1,4 @@
+{
+    "shader": "force.wgsl",
+    "groups": [["velocity", "force", "mass", "deltaTime"]]
+}

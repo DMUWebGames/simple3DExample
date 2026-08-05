@@ -1,0 +1,4 @@
+{
+    "shader": "movement.wgsl",
+    "groups": [["position", "velocity", "scale", "deltaTime", "size"]]
+}
