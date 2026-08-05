@@ -26,24 +26,21 @@ export class GPUBufferManager {
     }
 
     createUniform({label, data}) {
-        this.create({ label, data,
-            usage: UNIFORM
-        })
+        this.create({ label, data, usage: UNIFORM });
     }
 
     createStorage({ label, data, stride }) {
-        this.create({ label, data,
-            usage: STORAGE
-        })
-        this.bufferInfo.set(label, { stride });
+        this.create({ label, data, usage: STORAGE });
+        this.bufferInfo.set(label, { stride, length: data.length / stride });
+        return this.getStorage(label);
     }
 
-    createVertex({ label, data, length }) {
-        this.create({
-            label, data,
-            usage: VERTEX
-        });
-        this.bufferInfo.set(label, { length });
+    createVertex({ label, vertices, stride }) {
+        
+        this.create({ label, data: vertices, usage: VERTEX });
+        this.bufferInfo.set(label, { stride, length: vertices.length / stride });
+        console.log(label, vertices.length, stride);
+        return this.getVertex(label);
     }
 
     createFromWorld(world) {
@@ -75,37 +72,30 @@ export class GPUBufferManager {
     }
 
     get(label) {
+        console.log(label);
+        
         return this.buffers.get(label);
     }
 
-    getOrInsert({ label, data, usage }) {
-        if (!this.buffers.has(label)) {
-            this.create({ label, data, usage });
-        }
-        return this.buffers.get(label);
+    getVertex(label) {
+        const buffer = this.buffers.get(label);
+        const { stride, length } = this.bufferInfo.get(label);
+        return { buffer, stride, length };
     }
 
-    getOrInsertUniform({ label, data }) {
-        return this.getOrInsert({
-            label, data, 
-            usage: UNIFORM
-        })
-    }
-
-    getOrInsertStorage({ label, data }) {
-        return this.getOrInsert({
-            label, data, 
-            usage: STORAGE
-        })
+    getStorage(label) {
+        const buffer = this.buffers.get(label);
+        const { stride, length } = this.bufferInfo.get(label);
+        return { buffer, stride, length };
     }
 
     setUniform(label, data) {
-        const buffer = this.get(label);
+        const buffer = this.buffers.get(label);
         device.queue.writeBuffer(buffer, 0, data);
     }
 
     setStorage(label, entityId, data) {
-        const buffer = this.get(label);
+        const buffer = this.buffers.get(label);
         const { stride } = this.bufferInfo.get(label);
         const offset = entityId * stride;
         device.queue.writeBuffer(buffer, offset, data);

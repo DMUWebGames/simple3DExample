@@ -60,7 +60,7 @@ export class RenderSystem {
         };
     }
 
-    update({world, buffers, device}) {
+    update({ device }) {
         const encoder = device.createCommandEncoder();
         const pass = encoder.beginRenderPass({
             label: this.label,
@@ -71,7 +71,7 @@ export class RenderSystem {
             }],
             depthStencilAttachment: this.depthStencilAttachment
         });
-        for (const [name, pipeline] of this.pipelines) {
+        for (const pipeline of this.pipelines.values()) {
             pipeline.render(pass);
         }
         pass.end();

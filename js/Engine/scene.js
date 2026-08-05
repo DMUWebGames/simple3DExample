@@ -45,6 +45,18 @@ export class Scene {
         this.layers.set(name, new Layer(systems));
     }
 
+    addRenderable(label, vertices, material, { stride }) { 
+        const { buffer, length } = this.buffers.createVertex({
+            label: `${label} vertices (stride: ${stride})`,
+            vertices, stride
+        });
+        return this.renderables.set(label, {
+            vertexBuffer: buffer,
+            vertexCount: length,
+            material
+        });        
+    }
+
     resize(canvas) {
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;

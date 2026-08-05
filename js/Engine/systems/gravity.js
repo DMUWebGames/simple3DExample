@@ -12,7 +12,7 @@ export class GravitySystem extends ComputeSystem {
         }, ctx);
     }
 
-    update({ world, buffers, device }) {
+    update({ world, device }) {
         const encoder = device.createCommandEncoder();
         const pass = encoder.beginComputePass({ label: this.label });
         pass.setPipeline(this.pipeline);

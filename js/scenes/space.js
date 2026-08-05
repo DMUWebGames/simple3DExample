@@ -28,7 +28,7 @@ const skyBoxMaterial = await loadMaterial("materials/skybox.json");
 performance.mark('space-scene-assets-loaded');
 performance.measure('space-scene-assets', 'space-scene-module', 'space-scene-assets-loaded');
 
-const cubeVertices = await loadVertices('meshes/cube.json');
+const crateVertices = await loadVertices('meshes/cube.json');
 const asteroidVertices = await loadVertices('meshes/sphere_20.json');
 const skyBoxVertices = await loadVertices('meshes/sphere_50.json');
 
@@ -208,45 +208,26 @@ export class SpaceScene extends Scene {
     }
 
     createVertexBuffers() { 
-        // Vertex buffers
-        this.buffers.createVertex({
-            label: "crate vertices",
-            data: cubeVertices,
-            length: cubeVertices.length / 8
-        });
+        this.crateRenderableId = this.addRenderable(
+            "crate",
+            crateVertices,
+            crateMaterial,
+            {stride: 8}
+        )
 
-        this.buffers.createVertex({
-            label: "asteroid vertices",
-            data: asteroidVertices,
-            length: asteroidVertices.length / 8
-        });
+        this.asteroidRenderableId = this.addRenderable(
+            "asteroid",
+            asteroidVertices,
+            asteroidMaterial,
+            {stride: 8}
+        )
 
-        this.buffers.createVertex({
-            label: "skybox vertices",
-            data: skyBoxVertices,
-            length: skyBoxVertices.length / 8
-        });
-
-        // Rendering data for Crates
-        this.crateRenderableId = this.renderables.set("crate", {
-            vertexBuffer: this.buffers.get("crate vertices"),
-            vertexCount: cubeVertices.length / 8,
-            material: crateMaterial
-        });
-        
-        // Rendering data for Asteroids
-        this.asteroidRenderableId = this.renderables.set("asteroid", {
-            vertexBuffer: this.buffers.get("asteroid vertices"),
-            vertexCount: asteroidVertices.length / 8,
-            material: asteroidMaterial
-        });
-
-        // Rendering data for the skybox
-        this.skyBoxRenderableId = this.renderables.set("skybox", {
-            vertexBuffer: this.buffers.get("skybox vertices"),
-            vertexCount: skyBoxVertices.length / 8,
-            material: skyBoxMaterial
-        });
+        this.skyBoxRenderableId = this.addRenderable(
+            "skybox",
+            skyBoxVertices,
+            skyBoxMaterial,
+            {stride: 8}
+        )
     }
 
     createInstanceBuffers() { 
