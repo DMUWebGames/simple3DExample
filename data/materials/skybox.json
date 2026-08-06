@@ -1,5 +1,5 @@
 {
     "module": "phong.wgsl",
     "textures": ["celestial_grid_bright.JPG"],
-    "cullmode": "none"
+    "cullmode": "back"
 }

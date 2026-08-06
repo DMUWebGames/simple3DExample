@@ -43,9 +43,9 @@ export const randomVector = (min=-1, max=1) => {
 
 export function randomOrientation() {
     return Array.from(vec3.create(
-        (Math.random() - 0.5) * 0.1,
-        (Math.random() - 0.5) * 0.1,
-        (Math.random() - 0.5) * 0.1
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 2
     ));
 }
 
@@ -60,6 +60,7 @@ export function randomDirection() {
 }
 
 export function randomInSphere(radius = 100) {
+    // return vec3.random(radius);
     let p;
     do {
         p = vec3.create(

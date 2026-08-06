@@ -14,10 +14,12 @@ export class ComponentRegistry {
     }
 
     get(name) {
+        if(!this.registry.has(name)) throw new Error(`unknown component: '${name}'`)
         return this.registry.get(name);
     }
 
     getByName(name) {
+        if(!this.registry.has(name)) throw new Error(`unknown component: '${name}'`)
         const entry = this.registry.get(name);
         return entry ? entry.bit : null;
     }

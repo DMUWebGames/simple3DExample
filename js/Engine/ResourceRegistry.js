@@ -1,29 +1,31 @@
 
 export class ResourceRegistry {
+    #names;
+    #map;
     constructor() {
-        this.names = [];
-        this.map = new Map();
+        this.#names = [];
+        this.#map = new Map();
     }
 
     set(name, value) {
-        if (!this.names.includes(name)) {
-            this.names.push(name);
+        if (!this.#names.includes(name)) {
+            this.#names.push(name);
         }
-        const id = this.names.indexOf(name);
-        this.map.set(name, value);
+        const id = this.#names.indexOf(name);
+        this.#map.set(name, value);
         return id;
     }
 
     get(name) {
-        return this.map.get(name);
+        return this.#map.get(name);
     }
 
     getByIndex(id) {
-        return this.get(this.names[id]);
+        return this.get(this.#names[id]);
     }
 
     indexOf(name) {
-        return this.names.indexOf(name);
+        return this.#names.indexOf(name);
     }
 
     getOrInitialise(name, callback) {
@@ -37,9 +39,9 @@ export class ResourceRegistry {
     }
 
     *[Symbol.iterator]() { 
-        for (const id in this.names) {
-            const name = this.names[id];
-            const resource = this.map.get(name);
+        for (const id in this.#names) {
+            const name = this.#names[id];
+            const resource = this.#map.get(name);
             yield {id, name, resource}
         }
     }

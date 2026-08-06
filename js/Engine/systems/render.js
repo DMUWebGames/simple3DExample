@@ -9,7 +9,7 @@ class NoInstancesWarning extends Error {
 
 
 export class RenderSystem { 
-    constructor(config, { buffers, device, canvas, renderables }) { 
+    constructor(config, { buffers, device, canvas, models }) { 
         this.label = config.label;
         this.device = device;
         this.format = navigator.gpu.getPreferredCanvasFormat();
@@ -22,9 +22,9 @@ export class RenderSystem {
         this.depthTexture = null;
         this.sampler = device.createSampler();
         this.pipelines = new Map();
-        for (const renderable of renderables) {
+        for (const model of models) {
             try {
-                this.pipelines.set(renderable.name, new RenderPipeline(config.groups, renderable, {
+                this.pipelines.set(model.name, new RenderPipeline(config.groups, model, {
                     sampler: this.sampler,
                     format: this.format,
                     buffers, device
@@ -80,8 +80,8 @@ export class RenderSystem {
 
 
 class RenderPipeline {
-    constructor(groups, renderable, { sampler, format, buffers, device }) {
-        const { id, name, resource: { material, vertexBuffer, vertexCount } } = renderable;
+    constructor(groups, model, { sampler, format, buffers, device }) {
+        const { id, name, resource: { material, vertexBuffer, vertexCount } } = model;
         const { module, textures, cullmode } = material
         this.id = id;
         this.name = name;

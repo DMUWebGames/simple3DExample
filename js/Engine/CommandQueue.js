@@ -13,8 +13,7 @@ export class CommandQueue {
         }
     }
 
-    flush({ world, buffers }) {
-
+    flush({ buffers }) {
         for (const { type, entityId, component, data } of this) {
             if (type === "write") {
                 buffers.setStorage(component, entityId, data);

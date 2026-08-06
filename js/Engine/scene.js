@@ -1,3 +1,4 @@
+import { cameraScript } from "../../scripts/camera.js";
 import { loadComponent } from "../components.js";
 import { loadModel } from "../model.js";
 import { loadSystem } from "../system.js";
@@ -6,59 +7,152 @@ import { EntityFramework } from "./ECS/Framework.js";
 import { GPUBufferManager } from "./GPUBuffers.js";
 import { Layer } from "./Layer.js";
 import { ResourceRegistry } from "./ResourceRegistry.js";
-import { ScriptManager } from "./ScriptManager.js";
 import { ComputeSystem } from "./systems/compute.js";
+import { Renderer } from "./systems/renderer.js";
+import { ScriptingSystem } from "./systems/scripts.js";
 
 export class Scene {
 
+    // All async work needs to be done before we call the constructor
     static async create(device, canvas, config) {
         performance.mark('scene-create-0');
-        config.components = Object.fromEntries(await Promise.all(config.components.map(async (c) => [c, await loadComponent(c)])));
-        config.models = Object.fromEntries(await Promise.all(config.models.map(async (m) => [m, await loadModel(m)])));
+
+        // Load systems (WGSL modules)
         for (const layer of config.layers) {
             layer.systems = await Promise.all(layer.systems.map(loadSystem));
         }
+
+        // Work out necessary components from layers
+        const requiredBuffers = new Set(config.layers.map(l => {
+            return l.systems.map(s => {
+                return s.groups.flat()
+            }).flat();
+        }).flat())
+        const providedUniforms = new Set(["deltaTime", "canvas", ...Object.keys(config.uniforms)]);
+        const requiredComponents = Array.from(requiredBuffers.difference(providedUniforms));
+        
+        // load component definitions and add to config
+        config.components = Object.fromEntries(
+            await Promise.all(requiredComponents.map(async (c) => [c, await loadComponent(c)]))
+        );
+
+        // Extract models from entities
+        const models = Array.from(new Set(
+            [...config.entities.filter(e => e.model).map(e => e.model), ...config.models]
+        ));
+                
+        // Load models (meshes and materials, including WGSL modules)
+        config.models = Object.fromEntries(await Promise.all(models.map(async (m) => [m, await loadModel(m)])));
+
+
+
         performance.mark('scene-create-1');
         performance.measure("shaders loaded", "scene-create-0", "scene-create-1");
         return new this(device, canvas, config);
     }
+    
 
-    constructor(device, canvas, models, layers, config) { 
+    // instances get nicely prepared data
+    constructor(device, canvas, config) { 
         performance.mark('scene start');
+        
+        // put some basic things in place
         this.device = device;
         this.canvas = canvas;
-        this.models = models;
-        this.layers = layers;
-        this.world = new EntityFramework(config);
-        this.commands = new CommandQueue();
         this.layers = new Map();
+        this.commands = new CommandQueue();
         this.buffers = new GPUBufferManager();
-        this.renderables = new ResourceRegistry();
         this.input = new ResourceRegistry();
-        this.misc = new ResourceRegistry();
-        this.scripts = new ScriptManager();
-
-
+        this.models = new ResourceRegistry();
         this.initMouse();
         this.initKeys();
-        this.__createRenderables();
-        this.__createUniformBuffers();
         
+        const {
+            models,
+            layers,
+            uniforms,
+            components,
+            entities: originalEntities
+        } = config;
+
+        
+
+        this.__createModels(models);
+        
+        // Component handling
+        // This is dodgy
+
+        // set default values from component defaults?
+        const entities = originalEntities.map(e => ({...components, ...e}))
+
+        // the model is provided as a string - we replace it with an integer for indexing
+        components.model = 0;
+
+        // we query the world for scriptables at the moment
+        // Since it happens on the CPU anyway
+        components.scriptable = [0, 0];
+
+        // components.camera = {
+        //     "near": 0.1, 
+        //     "far": 100, 
+        //     "fov": 60, 
+        //     "_pad": 0
+        // }
+        
+        // Initialise the world
+        const maxEntities = entities.length;
+        this.world = new EntityFramework({
+            components,
+            maxEntities
+        });
+
+        // register entities
+        entities.forEach(entity => { 
+            // convert the model to an index as necessary
+            if (entity.model) {
+                entity.model = this.models.indexOf(entity.model);
+            }
+            const entityId = this.createEntity(entity);
+            // if (entity.camera) {
+            //     console.log(entity);
+            //     uniforms.activeCamera = entityId;
+            //     console.log(uniforms);
+            // }
+            // Hack to add the script to the camera based on provided cameraId uniform
+            if (uniforms.activeCamera == entityId) {
+                this.world.addComponent(entityId, "scriptable", [0, 0]);
+            }
+        })
+        
+        this.buffers.createFromWorld(this.world);
+        this.buffers.indexBy(this.world, "model", 0);
+        this.__createUniformBuffers(uniforms);
+        
+        
+        // set up scripts
+        const scripts = [cameraScript]
+        const scriptData = [{
+            torque: [-0.25, -0.25, -2],
+            thrust: -1500,
+            brake: -1000
+        }]
+
+        this.scripts = new ScriptingSystem(scripts, scriptData);
+
         // can't initialise systems until the buffers are set up
-        // console.log(layers);
-        // this.addLayers(layers);
-        // this.renderer = new Renderer({
-        //     buffers: this.buffers,
-        //     device: this.device,
-        //     canvas: this.canvas,
-        //     renderables: this.renderables
-        // });
+        this.addLayers(layers);
+        this.renderer = new Renderer({
+            buffers: this.buffers,
+            device: this.device,
+            canvas: this.canvas,
+            models: this.models
+        });
 
         performance.mark('scene end');
         performance.measure('scene init', 'scene start', 'scene end');
     }
 
-    __createUniformBuffers() { 
+    __createUniformBuffers(uniforms) { 
         
         this.buffers.createUniform({
             label: "deltaTime",
@@ -69,6 +163,10 @@ export class Scene {
             label: "canvas",
             data: new Float32Array([1])
         });
+
+        for (const [label, data] of Object.entries(uniforms)) {
+            this.buffers.createUniform({label, data});
+        }
     }
 
     addSystem(system) {
@@ -90,24 +188,29 @@ export class Scene {
         }
     }
 
-    __createRenderables() { 
-        for (const key in this.models) {
-            const { mesh, material } = this.models[key];
-            this.addRenderable(key, mesh.vertices, material, { stride: mesh.stride });            
+    __createModels(models) { 
+        for (const key in models) {
+            const { mesh, material } = models[key];
+            const { buffer, length } = this.buffers.createVertex({
+                label: `${key} vertices (stride: ${mesh.stride})`, ...mesh
+            });
+            this.models.set(key, {
+                vertexBuffer: buffer,
+                vertexCount: length,
+                material
+            });        
         }
     }
 
-    addRenderable(label, vertices, material, { stride }) { 
-        const { buffer, length } = this.buffers.createVertex({
-            label: `${label} vertices (stride: ${stride})`,
-            vertices, stride
-        });
-        return this.renderables.set(label, {
-            vertexBuffer: buffer,
-            vertexCount: length,
-            material
-        });        
+    createEntity(components) {
+        const id = this.world.createEntity();
+        for (const [key, value] of Object.entries(components)) {
+            const k = `${key[0].toLowerCase()}${key.slice(1)}`;
+            this.world.addComponent(id, k, value);
+        }
+        return id;
     }
+
 
     resize(canvas) {
         canvas.width = document.body.clientWidth;
@@ -154,6 +257,33 @@ export class Scene {
         });
     }
 
+    get ctx() {
+        return {
+            buffers: this.buffers,
+            world: this.world,
+            renderables: this.models,
+            input: this.input,
+            activeEntities: this.world.getActive(),
+            commands: this.commands,
+            canvas: this.canvas,
+            device: this.device
+        }
+    }
+
+    update() {
+
+        performance.mark(`${this.constructor.name} start`);
+        const ctx = this.ctx;
+        this.scripts.update(ctx);
+        this.commands.flush(ctx);
+        for (const layer of this.layers.values()) {
+            layer.update(ctx);
+        }
+        this.renderer.update(ctx);
+        performance.mark(`${this.constructor.name} complete`);
+        performance.measure(`${this.constructor.name} update`, `${this.constructor.name} start`, `${this.constructor.name} complete`);
+    }
+
     animate() { 
         requestAnimationFrame(this.frame.bind(this));
     }
@@ -162,7 +292,7 @@ export class Scene {
         const deltaTime = (ts - this.prevTime || 1000 / 60) / 1000;
         this.prevTime = ts;
         this.buffers.setUniform("deltaTime", new Float32Array([deltaTime]));
-        this.update(deltaTime);
+        this.update();
         requestAnimationFrame(this.frame.bind(this));
     }
 
