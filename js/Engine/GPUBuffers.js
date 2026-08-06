@@ -1,23 +1,22 @@
-import { device } from "../setup.js";
-
 const UNIFORM = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
 const STORAGE = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST;
 const VERTEX  = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST;
 
 export class GPUBufferManager { 
-    constructor() { 
+    constructor(device) { 
+        this.device = device;
         this.buffers = new Map();
         this.bufferInfo = new Map();
     }
 
     _createBuffer(label, data, usage) {
         if (this.buffers.has(label)) throw new Error(`Buffer '${label}' already exists!`);
-        const buffer = device.createBuffer({
+        const buffer = this.device.createBuffer({
             label,
             size: data.byteLength,
             usage
         });
-        device.queue.writeBuffer(buffer, 0, data);
+        this.device.queue.writeBuffer(buffer, 0, data);
         return buffer;
     }
 
@@ -87,13 +86,13 @@ export class GPUBufferManager {
 
     setUniform(label, data) {
         const buffer = this.buffers.get(label);
-        device.queue.writeBuffer(buffer, 0, data);
+        this.device.queue.writeBuffer(buffer, 0, data);
     }
 
     setStorage(label, entityId, data) {
         const buffer = this.buffers.get(label);
         const { stride } = this.bufferInfo.get(label);
         const offset = entityId * stride;
-        device.queue.writeBuffer(buffer, offset, data);
+        this.device.queue.writeBuffer(buffer, offset, data);
     }
 }

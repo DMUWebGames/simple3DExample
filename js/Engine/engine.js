@@ -1,4 +1,3 @@
-// import { device } from "./js/setup.js";
 
 export class Engine {
 

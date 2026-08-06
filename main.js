@@ -1,5 +1,5 @@
+import { Scene } from "./js/Engine/scene.js";
 import { performanceObserver } from "./js/performance.js";
-import { SpaceScene } from "./js/scenes/space.js";
 
 import { device, canvas } from "./js/setup.js";
 import { randomInSphere, randomVector } from "./js/tools.js";
@@ -68,14 +68,6 @@ const config = {
             }
         }
     ],
-    crates: {
-        n: 10000,
-        size: { min: 1, max: 10 }
-    },
-    asteroids: {
-        n: 1000,
-        size: { min: 500, max: 1000 }
-    },
     models: ["skybox", "crate", "asteroid"],
     uniforms: {
         size: new Float32Array([size]),
@@ -108,7 +100,7 @@ const config = {
     ]
 }
 
-const scene = await SpaceScene.create(device, canvas, config);
+const scene = await Scene.create(device, canvas, config);
 
 globalThis.scene = scene;
 globalThis.addEventListener("resize", () => scene.resize(canvas));
