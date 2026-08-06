@@ -11,6 +11,11 @@ import { ComputeSystem } from "./systems/compute.js";
 import { Renderer } from "./systems/renderer.js";
 import { ScriptingSystem } from "./systems/scripts.js";
 
+const SUPPORTED_TYPES = {
+    'f32': Float32Array,
+    'u32': Uint32Array
+}
+
 export class Scene {
 
     static prepareEntities(config) {
@@ -22,10 +27,10 @@ export class Scene {
     }
 
     // All async work needs to be done before we call the constructor
-    static async create(device, canvas, myConfig) {
+    static async create(device, canvas, config) {
         performance.mark('scene-create-0');
 
-        const config = Scene.prepareEntities(myConfig);
+        // const config = Scene.prepareEntities(myConfig);
 
         // Load systems (WGSL modules)
         for (const layer of config.layers) {
@@ -102,12 +107,6 @@ export class Scene {
         // Since it happens on the CPU anyway
         components.scriptable = [0, 0];
 
-        // components.camera = {
-        //     "near": 0.1, 
-        //     "far": 100, 
-        //     "fov": 60, 
-        //     "_pad": 0
-        // }
         
         // Initialise the world
         const maxEntities = entities.length;
@@ -123,13 +122,9 @@ export class Scene {
                 entity.model = this.models.indexOf(entity.model);
             }
             const entityId = this.createEntity(entity);
-            // if (entity.camera) {
-            //     console.log(entity);
-            //     uniforms.activeCamera = entityId;
-            //     console.log(uniforms);
-            // }
+        
             // Hack to add the script to the camera based on provided cameraId uniform
-            if (uniforms.activeCamera == entityId) {
+            if (uniforms.activeCamera.value[0] == entityId) {
                 this.world.addComponent(entityId, "scriptable", [0, 0]);
             }
         })
@@ -173,8 +168,10 @@ export class Scene {
             label: "canvas",
             data: new Float32Array([1])
         });
-
-        for (const [label, data] of Object.entries(uniforms)) {
+        
+        for (const [label, { type, value }] of Object.entries(uniforms)) {
+            if (!Object.keys(SUPPORTED_TYPES).includes(type)) throw new Error(`unsuported type '${type}'`);
+            const data = new SUPPORTED_TYPES[type](value);
             this.buffers.createUniform({label, data});
         }
     }
